@@ -83,10 +83,10 @@ corona.update() {
 
 corona.get_data () {
     local _location="$1"
-    _data="$(cat $source_file | grep $_location)"
+    _data="$(cat $source_file | grep $_location | head -1)"
     _data="${_data//'  '/'_'}"
     _data="${_data//' '/'_'}"
-    _data=${_data//,/ }  # _data="$(echo $_data | column -t -s ',')"
+    _data=${_data//,/ }
     export data_list=($_data)
 
 }
@@ -95,11 +95,11 @@ corona.get_data () {
 corona.markdown () {
     corona.update >/dev/null
     echo
-    printf "Country | Confirmed | Deaths | Recovered | Active\n"
+    printf "Country | Confirmed | Deaths | Recovered | Active | Updated \n"
     printf " --- | --- | --- | --- | ---\n"
         for _country in ${country_list[@]}; do
             corona.get_data "$_country"
-            printf "%s | %s | %s | %s | %s\n" "$_country" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" | column -t -s $' '
+            printf "%s | %s | %s | %s | %s | %s \n" "${data_list[0]}" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" "${data_list[1]}"
         done
     printf "\n*corona status at %s*\n" "$(date)"
     echo
@@ -117,7 +117,7 @@ corona.short () {
     declare -a _current_list=(${data_list[4]} ${data_list[5]} ${data_list[6]})
     local _change=""
 
-    printf "${NC}$country_selected\t${CRY}%s\t${RED}%s\t${GRN}%s\t${NC}" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
+    printf "${NC}%s\t${CRY}%s\t${RED}%s\t${GRN}%s\t${NC}" "$country_selected" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
     if ! ((_current_list[0]==_last_list[0])) ; then
             _change=$((_current_list[0]-_last_list[0]))
 
@@ -140,7 +140,7 @@ corona.short () {
         fi
 
     printf "\n"
-    printf "%s %s %s"  "${_current_list[0]}" "${_current_list[1]}" "${_current_list[2]}" > "$_last_time"
+    printf "%s %s %s" "${_current_list[0]}" "${_current_list[1]}" "${_current_list[2]}" > "$_last_time"
 }
 
 
@@ -158,7 +158,6 @@ corona.view () {
     while : ; do
             corona.status
             sleep "$_sleep_time"
-            corona.update
         done
 }
 
