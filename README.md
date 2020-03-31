@@ -26,7 +26,7 @@ https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv
 	commands:
 	  status|all            	all countries in interesting list
 	  short <Country>       	one line of statistics or country
-	  table                 	table vies without decorations for docs
+	  table <Country>            	table vies without decorations for docs
 	  web                   	open web view in source github page
 	  view|display <intrv>  	table vie of all countries, updates
 	                        	hourly (or input amount of seconds)
