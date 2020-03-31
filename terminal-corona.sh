@@ -23,7 +23,7 @@ corona.main () {
     case ${1,,} in
              status|all)  corona.status                         ;;
                   short)  corona.update ; corona.short "$2"     ;;
-                  table)  corona.table                          ;;
+            markdown|md)  corona.markdown                       ;;
            view|display)  corona.view "$2"                      ;;
                    help)  corona.help                           ;;
                     web)  firefox "$source_url"                 ;;
@@ -52,11 +52,11 @@ corona.help() {
 
 
 corona.update() {
-    printf "updating data... "
+    printf "updating data.. "
     local _clone_location="/tmp/guru/corona"
     source_file="cases_country.csv"
 
-    if ! [ -d "$_clone_location" ]; then
+    if ! [[ -d "$_clone_location" ]] ; then
             mkdir -p "$_clone_location"
             cd "$_clone_location"
             git clone -b web-data https://github.com/CSSEGISandData/COVID-19.git
@@ -72,7 +72,7 @@ corona.update() {
             return 10
         fi
 
-    if [ -f "$source_file" ]; then
+    if [[ -f "$source_file" ]] ; then
             return 0
         else
             FAILED "$source_file not found"
@@ -86,17 +86,23 @@ corona.get_data () {
     _data="$(cat $source_file | grep $_location)"
     _data="${_data//'  '/'_'}"
     _data="${_data//' '/'_'}"
-    _data="$(echo $_data | column -t -s ',')"
+    _data=${_data//,/ }  # _data="$(echo $_data | column -t -s ',')"
     export data_list=($_data)
+
 }
 
 
-corona.table () {
-    corona.update
-    [ "$1" ] && country_selected="$1"
-    corona.get_data "$country_selected"
-    printf "%s \t%s %s \t%s \n" "Confirmed" "Deaths" "Recovered" "Active" | column -t -s $" "
-    printf "%s \t\t%s \t%s \t\t%s \n" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" | column -t -s $" "
+corona.markdown () {
+    corona.update >/dev/null
+    echo
+    printf "Country | Confirmed | Deaths | Recovered | Active\n"
+    printf " --- | --- | --- | --- | ---\n"
+        for _country in ${country_list[@]}; do
+            corona.get_data "$_country"
+            printf "%s | %s | %s | %s | %s\n" "$_country" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" | column -t -s $' '
+        done
+    printf "\n*corona status at %s*\n" "$(date)"
+    echo
 }
 
 
