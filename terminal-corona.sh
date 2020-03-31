@@ -4,7 +4,7 @@
 # casa@ujo.guru 2020
 
 country_selected="Finland"
-country_list=("Finland" "Sweden" "Estonia" "Russia" "Norway" "Germany" "Spain" "France" "Italy" "Kingdom" "China" "US" )
+country_list=("Finland" "Sweden" "Estonia" "Russia" "Norway" "Germany" "Spain" "France" "Italy" "Kingdom" "US" "China" "Thailand" "Vietnam")
 source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv"
 
 # quick decorations from deco.sh for standalone
@@ -66,13 +66,13 @@ corona.update() {
 
     source_file="$_clone_location/COVID-19/data/$source_file"
 
-    # cd "$_clone_location/COVID-19"
-    # if git pull >/dev/null 2>&1 ; then
-    #         UPDATED
-    #     else
-    #         FAILED "repository not found"
-    #         return 10
-    #     fi
+    cd "$_clone_location/COVID-19"
+    if git pull >/dev/null 2>&1 ; then
+            UPDATED
+        else
+            FAILED "repository not found"
+            return 10
+        fi
 
     if [[ -f "$source_file" ]] ; then
             return 0
@@ -117,11 +117,14 @@ corona.short () {
 
     declare -a _last_list=($(cat $_last_time))
     declare -a _current_list=(${data_list[4]} ${data_list[5]} ${data_list[6]})
-    local _time=$(cut -d "_" -f2  <<< ${data_list[1]} )
     local _change=""
+    local _time=$(cut -d "_" -f2  <<< ${data_list[1]})
+    local _country="$(cut -c -15 <<< ${data_list[0]})"
+    _country="${_country//'_'/' '}"
 
-    [[ "$timestamp" ]] &&  printf "%s " "$_time"
-    printf "${NC}%7s ${CRY}%10s ${RED}%6s ${GRN}%s ${NC}" "$country_selected" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
+    [[ "$timestamp" ]] && printf "%s," "$_time"
+    printf "${NC}%15s,${CRY}%7s,${RED}%7s,${GRN}%s,${NC}" "$_country" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
+
     if ! ((_current_list[0]==_last_list[0])) ; then
             _change=$((_current_list[0]-_last_list[0]))
 
@@ -150,11 +153,10 @@ corona.short () {
 
 corona.status () {
     corona.update
-    echo
-    [[ "$timestamp" ]] && printf "${WHT}Updated  "
-    printf "${WHT}%s     %s  %s %s\t%s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change"
+    [[ "$timestamp" ]] && printf "${WHT}Updated   "
+    printf "${WHT}%15s,%7s,%7s,%s\t%s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
     for _country in ${country_list[@]}; do
-           corona.short "$_country"
+           corona.short "$_country" | column -t -s$','
         done
 }
 
