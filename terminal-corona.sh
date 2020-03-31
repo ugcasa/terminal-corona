@@ -43,6 +43,8 @@ corona.help() {
     printf "  markdown              table of intrest in markdown format  \n"
     printf "  view|display <intrv>  table vie of all countries, updates \n"
     printf "                        hourly (or input amount of seconds) \n"
+    printf "${WHT}flags:${NC}\n"
+    printf "  -t                    activate timestamps \n"
     printf "${WHT}examples:${NC} "
     printf "\t terminal-corona status \n"
     printf "\t\t terminal-corona Estonia \n"
@@ -149,7 +151,7 @@ corona.short () {
 corona.status () {
     corona.update
     echo
-    [[ "$timestamp" ]] &&  printf "${WHT}Updated  "
+    [[ "$timestamp" ]] && printf "${WHT}Updated  "
     printf "${WHT}%s     %s  %s %s\t%s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change"
     for _country in ${country_list[@]}; do
            corona.short "$_country"
