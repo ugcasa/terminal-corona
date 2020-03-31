@@ -1,9 +1,12 @@
 #!/bin/bash
-# ujo.guru corona status viewer casa@ujo.guru 2020
+# ujo.guru corona status viewer - a linux shell script to view current corona infection status per country
+# data source is CSSE at Johns Hopkins University COVID-19 git database
+# casa@ujo.guru 2020
 
 # decorations from deco.sh for standalone
 export RED='\033[0;31m'
 export GRN='\033[0;32m'
+export WHT='\033[1;37m'
 export NC='\033[0m'
 export UPDATED="${GRN}UPDATED${NC}\n"
 export FAILED="${RED}FAILED${NC}\n"
@@ -29,21 +32,20 @@ corona.main () {
 
 
 corona.help() {
-    echo "-- ujo.guru terminal-corona help -----------------------------------"
-    printf "usage:\t\t terminal-corona [command|Country] \n"
-    printf "commands:\n"
-    printf " status|all          all interesting (hard coded) countries \n"
-    printf " short <Country>     one line statistics \n"
-    printf " web                 open web view in source github page \n"
-    printf " view <interval>     table vie of all countries, updates \n"
-    printf "                     hourly (or input amount of seconds) \n"
-    printf " table               some kind of table view \n"
-
-    printf "\nuse verbose flag '-v' to print headers. \n"
-    printf "\nexample:\n"
+    printf "${WHT}-- ujo.guru - terminal-corona - help -----------------------------------${NC}\n"
+    printf "a linux shell script to view current corona infection status per country\n"
+    printf "${WHT}usage:${NC}\t terminal-corona [command|Country] \n"
+    printf "${WHT}commands:${NC}\n"
+    printf "  status|all            all countries in interesting list \n"
+    printf "  short <Country>       one line of statistics or country  \n"
+    printf "  table                 table vies without decorations for docs \n"
+    printf "  web                   open web view in source github page \n"
+    printf "  view|display <intrv>  table vie of all countries, updates \n"
+    printf "                        hourly (or input amount of seconds) \n"
+    printf "${WHT}examples:${NC} "
     printf "\t terminal-corona status \n"
-    printf "\t terminal-corona Estonia \n"
-    printf "\t terminal-corona view 10 \n"
+    printf "\t\t terminal-corona Estonia \n"
+    printf "\t\t terminal-corona view 10 \n"
     return 0
 }
 
