@@ -17,23 +17,23 @@ https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv
 
 ## Help output
 
-	-- ujo.guru - terminal-corona - help -----------------------------------
+-- ujo.guru - terminal-corona - help -----------------------------------
+a linux shell script to view current corona infection status per country
 
-	a linux shell script to view current corona infection status per country
+usage:	 terminal-corona [command|Country]
 
-	usage:	 terminal-corona [command|Country]
+commands:
+  status|all            all countries in interesting list
+  short <Country>       one line of statistics or country
+  web                   open web view in source github page
+  markdown              table of intrest in markdown format
+  view|display <intrv>  table vie of all countries, updates
+                        hourly (or input amount of seconds)
 
-	commands:
-	  status|all            	all countries in interesting list
-	  short <Country>       	one line of statistics or country
-	  table <Country>            	table vies without decorations for docs
-	  web                   	open web view in source github page
-	  view|display <intrv>  	table vie of all countries, updates
-	                        	hourly (or input amount of seconds)
+examples: 	 terminal-corona status
+		 	terminal-corona Estonia
+			 terminal-corona view 10
 
-	examples: 	terminal-corona status
-				terminal-corona Estonia
-				terminal-corona view 10
 
 ## Screen shot
 
