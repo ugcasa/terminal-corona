@@ -27,3 +27,7 @@ https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv
 		 terminal-corona status
 		 terminal-corona Estonia
 		 terminal-corona view 10
+
+## screen shot
+
+![](terminal-corona.png)"
