@@ -1,4 +1,4 @@
-# terminal-corona - View corona infection status in terminal
+# terminal-corona - view corona infection status in terminal
 
 Linux shell script to view current corona infection status per country
 
