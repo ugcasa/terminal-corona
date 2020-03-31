@@ -64,13 +64,13 @@ corona.update() {
 
     source_file="$_clone_location/COVID-19/data/$source_file"
 
-    cd "$_clone_location/COVID-19"
-    if git pull >/dev/null 2>&1 ; then
-            UPDATED
-        else
-            FAILED "repository not found"
-            return 10
-        fi
+    # cd "$_clone_location/COVID-19"
+    # if git pull >/dev/null 2>&1 ; then
+    #         UPDATED
+    #     else
+    #         FAILED "repository not found"
+    #         return 10
+    #     fi
 
     if [[ -f "$source_file" ]] ; then
             return 0
@@ -115,9 +115,11 @@ corona.short () {
 
     declare -a _last_list=($(cat $_last_time))
     declare -a _current_list=(${data_list[4]} ${data_list[5]} ${data_list[6]})
+    local _time=$(cut -d "_" -f2  <<< ${data_list[1]} )
     local _change=""
 
-    printf "${NC}%s\t${CRY}%s\t${RED}%s\t${GRN}%s\t${NC}" "$country_selected" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
+    [[ "$timestamp" ]] &&  printf "%s " "$_time"
+    printf "${NC}%7s ${CRY}%10s ${RED}%6s ${GRN}%s ${NC}" "$country_selected" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
     if ! ((_current_list[0]==_last_list[0])) ; then
             _change=$((_current_list[0]-_last_list[0]))
 
@@ -146,9 +148,11 @@ corona.short () {
 
 corona.status () {
     corona.update
-    printf "${WHT}Country\tInfect\tDeath\tRecov\tChange ${NC}(since last check)\n"
+    echo
+    [[ "$timestamp" ]] &&  printf "${WHT}Updated  "
+    printf "${WHT}%s     %s  %s %s\t%s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change"
     for _country in ${country_list[@]}; do
-            corona.short "$_country"
+           corona.short "$_country"
         done
 }
 
@@ -163,6 +167,13 @@ corona.view () {
 
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+
+    while getopts 't' flag; do
+        case "${flag}" in
+            t)  export timestamp=true ; shift ;;
+        esac
+    done
+
     corona.main $@
     exit 0
 fi
