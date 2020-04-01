@@ -3,9 +3,10 @@
 # data source is CSSE at Johns Hopkins University COVID-19 git database
 # casa@ujo.guru 2020
 
-country_selected="Finland"
-country_list=("Finland" "Sweden" "Estonia" "Russia" "Norway" "Germany" "Spain" "France" "Italy" "Kingdom" "US" "China" "Thailand" "Vietnam")
+
 source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv"
+source list_of_countries.cfg ; declare -a country_list=($COUNTRY_LIST)
+country_selected="${country_list[0]}"
 
 # quick decorations from deco.sh for standalone
 export RED='\033[0;31m'
@@ -101,9 +102,10 @@ corona.markdown () {
     printf "Country | Confirmed | Deaths | Recovered | Active | Updated \n"
     printf " --- | --- | --- | --- | ---\n"
         for _country in ${country_list[@]}; do
-            corona.get_data "$_country"
-            printf "%s | %s | %s | %s | %s | %s \n" "${data_list[0]}" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" "${data_list[1]}"
-        done
+                corona.get_data "$_country"
+                printf "%s | %s | %s | %s | %s | %s \n" \
+                "${data_list[0]}" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" "${data_list[1]}"
+            done
     printf "\n*corona status at %s*\n" "$(date)"
     echo
 }
@@ -124,6 +126,7 @@ corona.short () {
     _country="${_country//'_'/' '}"
 
     [[ "$timestamp" ]] && printf "%s," "$_time"
+
     printf "${NC}%15s,${CRY}%7s,${RED}%7s,${GRN}%7s,${NC}" "$_country" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
 
     if ! ((_current_list[0]==_last_list[0])) ; then
@@ -153,7 +156,7 @@ corona.short () {
 
 
 corona.status () {
-    corona.update
+    corona.update >/dev/null
     [[ "$timestamp" ]] && printf "${WHT}Updated   "
     printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
     for _country in ${country_list[@]}; do
@@ -174,10 +177,16 @@ corona.view () {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
     while getopts 't' flag; do
-        case "${flag}" in
-            t)  export timestamp=true ; shift ;;
-        esac
-    done
+            case "${flag}" in
+                t)  export timestamp=true ; shift ;;
+            esac
+        done
+
+    if ! which git >/dev/null; then
+        echo "plase install git first."
+        echo "debian based systems: 'sudo apt update && sudo apt install git'"
+        exit 123
+        fi
 
     corona.main $@
     exit 0
