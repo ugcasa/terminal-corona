@@ -22,14 +22,12 @@ UPDATED () { [ "$1" ] && printf "$1: $UPDATED"           || printf "$UPDATED" ; 
 corona.main () {
 
     case ${1,,} in
-             status|all)  corona.status                         ;;
-                  short)  corona.update >/dev/null
-                          corona.short "$2" | column -t -s$','  ;;
+             status|all)  shift ; corona.status "$@"            ;;
             markdown|md)  corona.markdown                       ;;
            view|display)  corona.view "$2"                      ;;
                    help)  corona.help                           ;;
                     web)  firefox "$source_url"                 ;;
-                      *)  corona.status                         ;;
+                      *)  corona.status "$@"                    ;;
     esac
 }
 
@@ -37,20 +35,18 @@ corona.main () {
 corona.help() {
     printf "${WHT}-- ujo.guru - terminal-corona - help -----------------------------------${NC}\n"
     printf "a linux shell script to view current corona infection status per country\n"
-    printf "${WHT}usage:${NC}\t terminal-corona [command|Country] \n"
-    printf "${WHT}commands:${NC}\n"
-    printf "  status|all            all countries in interesting list \n"
-    printf "  short <Country>       one line of statistics or country  \n"
-    printf "  web                   open web view in source github page \n"
-    printf "  markdown              table of intrest in markdown format  \n"
-    printf "  view|display <intrv>  table vie of all countries, updates \n"
-    printf "                        hourly (or input amount of seconds) \n"
+    printf "\n${WHT}usage:${NC}\t terminal-corona [command|Country] \n"
+    printf "\n${WHT}commands:${NC}\n"
+    printf "  status|all                all countries in interesting list \n"
+    printf "  web                       open web view in source github page \n"
+    printf "  markdown                  table of intrest in markdown format  \n"
+    printf "  view|display <intrv>      table vie of all countries, updates \n"
+    printf "                            hourly (or input amount of seconds) \n"
     printf "${WHT}flags:${NC}\n"
-    printf "  -t                    activate timestamps \n"
-    printf "${WHT}examples:${NC} "
-    printf "\t terminal-corona status \n"
-    printf "\t\t terminal-corona Estonia \n"
-    printf "\t\t terminal-corona view 10 \n"
+    printf "  -t                        activate timestamps \n"
+    printf "\n${WHT}examples:${NC} "
+    printf "\t ./terminal-corona.sh Estonia Sweden Russia \n"
+    printf "\t\t ./terminal-corona.sh view 10 \n"
     return 0
 }
 
@@ -111,7 +107,7 @@ corona.markdown () {
 }
 
 
-corona.short () {
+corona.country () {
     [ "$1" ] && country_selected="$1"
     _last_time="$HOME/corona" ; [ -d "$_last_time" ] || mkdir "$_last_time"
     _last_time="$_last_time/$country_selected.last" ; [ -f "$_last_time" ] || touch "$_last_time"
@@ -127,7 +123,8 @@ corona.short () {
 
     [[ "$timestamp" ]] && printf "%s," "$_time"
 
-    printf "${NC}%15s,${CRY}%7s,${RED}%7s,${GRN}%7s,${NC}" "$_country" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
+    printf "${NC}%15s,${CRY}%7s,${RED}%7s,${GRN}%7s,${NC}" \
+           "$_country" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
 
     if ! ((_current_list[0]==_last_list[0])) ; then
             _change=$((_current_list[0]-_last_list[0]))
@@ -159,8 +156,11 @@ corona.status () {
     corona.update >/dev/null
     [[ "$timestamp" ]] && printf "${WHT}Updated   "
     printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
+
+    if [[ "$1" ]]; then country_list=("$@"); fi
+
     for _country in ${country_list[@]}; do
-           corona.short "$_country" | column -t -s$','
+           corona.country "$_country" | column -t -s$','
         done
 }
 

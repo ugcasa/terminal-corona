@@ -23,16 +23,16 @@ https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv
     usage:   terminal-corona [command|Country]
 
     commands:
-      status|all            all countries in interesting list
-      short <Country>       one line of statistics or country
-      web                   open web view in source github page
-      markdown              table of intrest in markdown format
-      view|display <intrv>  table vie of all countries, updates
-                            hourly (or input amount of seconds)
+      status|all                all countries in interesting list
+      web                       open web view in source github page
+      markdown                  table of intrest in markdown format
+      view|display <intrv>      table vie of all countries, updates
+                                hourly (or input amount of seconds)
+    flags:
+      -t                        activate timestamps
 
-    examples:    terminal-corona status
-                terminal-corona Estonia
-                 terminal-corona view 10
+    examples:   ./terminal-corona.sh Estonia Sweden Russia
+                ./terminal-corona.sh view 10
 
 
 ## Screen shot
