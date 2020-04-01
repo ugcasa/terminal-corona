@@ -22,7 +22,8 @@ corona.main () {
 
     case ${1,,} in
              status|all)  corona.status                         ;;
-                  short)  corona.update ; corona.short "$2"     ;;
+                  short)  corona.update >/dev/null
+                          corona.short "$2" | column -t -s$','  ;;
             markdown|md)  corona.markdown                       ;;
            view|display)  corona.view "$2"                      ;;
                    help)  corona.help                           ;;
@@ -123,27 +124,27 @@ corona.short () {
     _country="${_country//'_'/' '}"
 
     [[ "$timestamp" ]] && printf "%s," "$_time"
-    printf "${NC}%15s,${CRY}%7s,${RED}%7s,${GRN}%s,${NC}" "$_country" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
+    printf "${NC}%15s,${CRY}%7s,${RED}%7s,${GRN}%7s,${NC}" "$_country" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
 
     if ! ((_current_list[0]==_last_list[0])) ; then
             _change=$((_current_list[0]-_last_list[0]))
 
             ((_current_list[0]>_last_list[0])) && _sing="+" || _sing=""
-            printf "${CRY}%s%s ${NC}" "$_sing" "$_change"
+            printf "${CRY} %s%s ${NC}" "$_sing" "$_change"
         fi
 
     if ! ((_current_list[1]==_last_list[1])) ; then
             _change=$((_current_list[1]-_last_list[1]))
 
             ((_current_list[1]>_last_list[1])) && _sing="+" || _sing=""
-            printf "${RED}%s%s ${NC}" "$_sing" "$_change"
+            printf "${RED} %s%s ${NC}" "$_sing" "$_change"
         fi
 
     if ! ((_current_list[2]==_last_list[2])) ; then
             _change=$((_current_list[2]-_last_list[2]))
 
             ((_current_list[2]>_last_list[2])) && _sing="+" || _sing=""
-            printf "${GRN}%s%s ${NC}" "$_sing" "$_change"
+            printf "${GRN} %s%s ${NC}" "$_sing" "$_change"
         fi
 
     printf "\n"
@@ -154,7 +155,7 @@ corona.short () {
 corona.status () {
     corona.update
     [[ "$timestamp" ]] && printf "${WHT}Updated   "
-    printf "${WHT}%15s,%7s,%7s,%s\t%s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
+    printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
     for _country in ${country_list[@]}; do
            corona.short "$_country" | column -t -s$','
         done
