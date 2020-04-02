@@ -85,13 +85,13 @@ corona.update() {
 
     source_file="$_clone_location/COVID-19/data/$source_file"
 
-    # cd "$_clone_location/COVID-19"
-    # if git pull >/dev/null 2>&1 ; then
-    #         UPDATED
-    #     else
-    #         FAILED "repository not found"
-    #         return 10
-    #     fi
+    cd "$_clone_location/COVID-19"
+    if git pull >/dev/null 2>&1 ; then
+            UPDATED
+        else
+            FAILED "repository not found"
+            return 10
+        fi
 
     if [[ -f "$source_file" ]] ; then
             return 0
