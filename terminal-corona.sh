@@ -41,28 +41,31 @@ corona.main () {
 
 
 corona.help() {
-    printf "${WHT}-- ujo.guru - terminal-corona - help --------------------------------${NC}\n"
+    printf "${WHT}  ҉ terminal-corona help ---------------------------------------------- ${NC}\n"
     printf "a linux shell script to view current corona infection status worldwide\n"
-    printf "\n${WHT}usage:${NC}\t terminal-corona -main_flag [output type] -sub_flag Country List \n"
-    printf "\n${WHT}output types:${NC}\n"
-    printf "  status                    colorful table view \n"
-    printf "  view -i 'sec'             status loop, updates hourly or \n"
-    printf "                            input amount of seconds \n"
-    printf "  txt                       tight text output \n"
-    printf "  csv                       csv output \n"
-    printf "  md                        markdown table \n"
-    printf "  raw 'separator'           raw output with selectable separator \n"
-    printf "  web                       open web view in source github page \n"
-    printf "  help                      help view \n"
+    printf "\n${WHT}usage:${NC}\t terminal-corona -t|h [output] all|Country List \n"
+    printf "\n${WHT}output:${NC}\n"
+    printf "  status [all|List Of Country]  colorful table view \n"
+    printf "  txt                           tight text output \n"
+    printf "  csv                           csv output \n"
+    printf "  md                            markdown table \n"
+    printf "  raw 'separator'               raw output with selectable separator \n"
+    printf "  web                           open web view in source github page \n"
+    printf "  view -i 'sec'                 status loop, updates hourly or input\n"
+    printf "                                amount of seconds \n"
+    printf "  help                          help view \n\n"
     printf "${WHT}flags:${NC}\n"
-    printf "  -t                        to activate timestamps \n"
-    printf "  -h                        set headers on or off \n"
-    printf "                            main flags cannot be combined \n"
+    printf "  -t                            to activate timestamps \n"
+    printf "  -h                            set headers on or off \n\n"
+    printf "All except view can take argument 'all' to list all countries status \n"
+    printf "or list of country typed with capital first letter. If left blanc county \n"
+    printf "of interest is used. Flags are place oriented and cannot be combined. \n"
     printf "\n${WHT}examples:${NC} "
     printf "\t ./terminal-corona.sh -t Estonia Sweden Russia \n"
     printf "\t\t ./terminal-corona.sh -h csv Germany France Egypt \n"
     printf "\t\t ./terminal-corona.sh raw '_' Barbuda Dominican Kyrgyzstan \n"
     printf "\t\t ./terminal-corona.sh -h view -i 300 \n"
+    printf "\t\t ./terminal-corona.sh md all \n"
     return 0
 }
 
@@ -82,13 +85,13 @@ corona.update() {
 
     source_file="$_clone_location/COVID-19/data/$source_file"
 
-    cd "$_clone_location/COVID-19"
-    if git pull >/dev/null 2>&1 ; then
-            UPDATED
-        else
-            FAILED "repository not found"
-            return 10
-        fi
+    # cd "$_clone_location/COVID-19"
+    # if git pull >/dev/null 2>&1 ; then
+    #         UPDATED
+    #     else
+    #         FAILED "repository not found"
+    #         return 10
+    #     fi
 
     if [[ -f "$source_file" ]] ; then
             return 0
@@ -158,9 +161,9 @@ corona.country () {
 
 corona.status () {
     corona.update >/dev/null
-    echo
-    [[ ! $header ]] && [[ $timestamp ]]  && printf "${WHT}Updated   "
-    [[ $header ]] || printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
+    [[ $header ]] &&    printf "  ҉ terminal-corona %40s\n" "COVID-19 status viewer for shell 2020"
+    [[ $timestamp ]] && printf "${WHT}Updated   "
+    [[ $header ]] ||    printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check) \n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
 
     if [[ "$1" ]]; then country_list=("$@") ; fi
 
@@ -180,11 +183,13 @@ corona.view () {
                             fi
         esac
 
+    if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
     if [[ "$1" ]] ; then country_list=("$@") ; fi
 
     while : ; do
             corona.status
             read -t $_sleep_time -p "" _cmd
+
             case $_cmd in
                     q|exit|quit) break ;;
                     t|timestamp) [[ $timestamp ]] && timestamp="" || timestamp=true ;;
@@ -197,14 +202,18 @@ corona.view () {
 corona.md () {
     corona.update >/dev/null
     if [[ "$1" ]] ; then country_list=("$@") ; fi
+    if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
+
     echo
     printf "Country | Confirmed | Deaths | Recovered | Active | Updated \n"
     printf " --- | --- | --- | --- | ---\n"
-        for _country in ${country_list[@]} ; do
-                corona.get_data "$_country"
-                printf "%s | %s | %s | %s | %s | %s \n" \
-                "${data_list[0]}" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" "${data_list[1]}"
-            done
+
+    for _country in ${country_list[@]} ; do
+            corona.get_data "$_country"
+            printf "%s | %s | %s | %s | %s | %s \n" \
+            "${data_list[0]}" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" "${data_list[1]}"
+        done
+
     printf "\n*corona status at %s*\n" "$(date)"
     echo
 }
@@ -213,12 +222,11 @@ corona.md () {
 corona.raw () {
     corona.update >/dev/null
 
-    echo "1) '$@'"
-
     local _output=""
     local _separator=" "
     if [[ "$1" ]] ; then _separator="$1" ; shift ; fi
     if [[ "$1" ]] ; then country_list=("$@") ; fi
+    if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
     if [[ $header ]] ; then printf "Country%sConfirmed%sDeaths%sRecovered%sActive%sUpdated\n" \
                                    "$_separator" "$_separator" "$_separator" "$_separator" "$_separator" ; fi
 
