@@ -3,7 +3,7 @@
 # data source is CSSE at Johns Hopkins University COVID-19 git database
 source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv"
 
-source list_of_countries.cfg
+source list_of_countries.txt
 declare -a country_list=($COUNTRY_LIST)
 country_selected="${country_list[0]}"
 
@@ -26,10 +26,10 @@ corona.main () {
 
     case $_cmd in
           status)   corona.status "$@"          ;;
-            view)   corona.view "$2"            ;;
+            view)   corona.view "$@"            ;;
              csv)   corona.raw ';' "$@"         ;;
              txt)   corona.raw ' ' "$@"         ;;
-             raw)   corona.raw  "$@"          ;;
+             raw)   corona.raw "$@"             ;;
               md)   corona.md $@                ;;
              web)   firefox "$source_url"       ;;
             help)   corona.help                 ;;
@@ -43,22 +43,24 @@ corona.help() {
     printf "a linux shell script to view current corona infection status worldwide\n"
     printf "\n${WHT}usage:${NC}\t terminal-corona -main_flag [output type] -sub_flag Country List \n"
     printf "\n${WHT}output types:${NC}\n"
-    printf "  status                    colorful table wiev \n"
-    printf "  view  <intrv>             status loop, updates hourly or\n"
+    printf "  status                    colorful table view \n"
+    printf "  view -i 'sec'             status loop, updates hourly or \n"
     printf "                            input amount of seconds \n"
-    printf "  raw " "                   raw output with selectable separator \n"
-    printf "  txt -h                    tight text output \n"
-    printf "  csv -h                    csv output \n"
+    printf "  txt                       tight text output \n"
+    printf "  csv                       csv output \n"
     printf "  md                        markdown table \n"
+    printf "  raw 'separator'           raw output with selectable separator \n"
     printf "  web                       open web view in source github page \n"
+    printf "  help                      help view \n"
     printf "${WHT}flags:${NC}\n"
-    printf "  -t                        main flag to activate timestamps \n"
-    printf "  -h                        sub flag to active headers with txt csv raw  \n"
+    printf "  -t                        to activate timestamps \n"
+    printf "  -h                        set headers on or off \n"
+    printf "                            main flags cannot be combined \n"
     printf "\n${WHT}examples:${NC} "
     printf "\t ./terminal-corona.sh -t Estonia Sweden Russia \n"
-    printf "\t\t ./terminal-corona.sh csv Germany France Egypt \n"
+    printf "\t\t ./terminal-corona.sh -h csv Germany France Egypt \n"
     printf "\t\t ./terminal-corona.sh raw '_' Barbuda Dominican Kyrgyzstan \n"
-    printf "\t\t ./terminal-corona.sh view 300 \n"
+    printf "\t\t ./terminal-corona.sh -h view -i 300 \n"
     return 0
 }
 
@@ -78,13 +80,13 @@ corona.update() {
 
     source_file="$_clone_location/COVID-19/data/$source_file"
 
-    cd "$_clone_location/COVID-19"
-    if git pull >/dev/null 2>&1 ; then
-            UPDATED
-        else
-            FAILED "repository not found"
-            return 10
-        fi
+    # cd "$_clone_location/COVID-19"
+    # if git pull >/dev/null 2>&1 ; then
+    #         UPDATED
+    #     else
+    #         FAILED "repository not found"
+    #         return 10
+    #     fi
 
     if [[ -f "$source_file" ]] ; then
             return 0
@@ -154,8 +156,9 @@ corona.country () {
 
 corona.status () {
     corona.update >/dev/null
-    [[ "$timestamp" ]] && printf "${WHT}Updated   "
-    printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
+    echo
+    [[ ! $header ]] && [[ $timestamp ]]  && printf "${WHT}Updated   "
+    [[ $header ]] || printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check)\n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
 
     if [[ "$1" ]]; then country_list=("$@") ; fi
 
@@ -166,10 +169,25 @@ corona.status () {
 
 
 corona.view () {
-    local _sleep_time=3600 ; [ "$1" ] && _sleep_time=$1
+    local _sleep_time=3600
+
+    case "$1" in -i)    shift
+                        if [[ "$1" ]] && [ ! -z "${1##*[!0-9]*}" ] ; then
+                                _sleep_time="$1"
+                                shift
+                            fi
+        esac
+
+    if [[ "$1" ]] ; then country_list=("$@") ; fi
+
     while : ; do
             corona.status
-            sleep "$_sleep_time"
+            read -t $_sleep_time -p "" _cmd
+            case $_cmd in
+                    q|exit|quit) break ;;
+                    t|timestamp) [[ $timestamp ]] && timestamp="" || timestamp=true ;;
+                       h|header) [[ $header ]]  && header="" || header=true ;;
+                esac
         done
 }
 
@@ -192,30 +210,34 @@ corona.md () {
 
 corona.raw () {
     corona.update >/dev/null
+
+    echo "1) '$@'"
+
     local _output=""
     local _separator=" "
-    if [[ $1 ]] ; then _separator="$1" ; shift ; fi
+    if [[ "$1" ]] ; then _separator="$1" ; shift ; fi
     if [[ "$1" ]] ; then country_list=("$@") ; fi
-
-    printf "Country%sConfirmed%sDeaths%sRecovered%sActive%sUpdated\n" \
-           "$_separator" "$_separator" "$_separator" "$_separator" "$_separator"
+    if [[ $header ]] ; then printf "Country%sConfirmed%sDeaths%sRecovered%sActive%sUpdated\n" \
+                                   "$_separator" "$_separator" "$_separator" "$_separator" "$_separator" ; fi
 
     for _country in ${country_list[@]}; do
             corona.get_data "$_country"
             printf "%s$_separator%s$_separator%s$_separator%s$_separator%s$_separator%s\n" \
             "${data_list[0]}" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" "${data_list[1]}"
         done
+    #echo "1:'$1' | h:'$header' s:'$_separator' 'o:$_output' 'cl:$country_list'"
     return 0
 }
 
 
-## Flahs, requirements, calling and errors
+## Flags, requirements, calling and errors
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
-    while getopts 't' flag; do
+    while getopts 'tih' flag; do
             case "${flag}" in
                 t)  export timestamp=true ; shift ;;
+                h)  export header=true ; shift ;;
             esac
         done
 
