@@ -25,15 +25,17 @@ corona.main () {
     local _cmd="$1" ; shift
 
     case $_cmd in
-          status)   corona.status "$@"          ;;
-            view)   corona.view "$@"            ;;
-             csv)   corona.raw ';' "$@"         ;;
-             txt)   corona.raw ' ' "$@"         ;;
-             raw)   corona.raw "$@"             ;;
-              md)   corona.md $@                ;;
-             web)   firefox "$source_url"       ;;
-            help)   corona.help                 ;;
-               *)   corona.status "$_cmd" "$@"  ;;
+          status)   corona.status "$@"                  ;;
+             all)   country_list=($COUNTRY_LIST_ALL)
+                    corona.status "$@"                  ;;
+            view)   corona.view "$@"                    ;;
+             csv)   corona.raw ';' "$@"                 ;;
+             txt)   corona.raw ' ' "$@"                 ;;
+             raw)   corona.raw "$@"                     ;;
+              md)   corona.md $@                        ;;
+             web)   firefox "$source_url"               ;;
+            help)   corona.help                         ;;
+               *)   corona.status "$_cmd" "$@"          ;;
     esac
 }
 
