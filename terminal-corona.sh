@@ -161,8 +161,8 @@ corona.country () {
 
 corona.status () {
     corona.update >/dev/null
-    [[ $header ]] &&    printf "  ҉ terminal-corona %40s\n" "COVID-19 status viewer for shell 2020"
-    [[ $timestamp ]] && printf "${WHT}Updated   "
+    [[ $header ]] &&    printf "${WHT}  ҉ terminal-corona %40s${NC}\n" " linux shell COVID-19 status viewer 2020"
+    [[ ! $header ]] && [[ $timestamp ]] && printf "${WHT}Updated   "
     [[ $header ]] ||    printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check) \n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
 
     if [[ "$1" ]]; then country_list=("$@") ; fi
