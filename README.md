@@ -15,6 +15,11 @@ CSSE at Johns Hopkins University COVID-19 git database at github.
 https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv
 
 
+## Screenshot
+
+![](terminal-corona.png)"
+
+
 ## Help output
 
       ҉ terminal-corona help ----------------------------------------------
@@ -49,6 +54,3 @@ https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv
 
 
 
-## Screen shot
-
-![](terminal-corona.png)"
