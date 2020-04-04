@@ -14,7 +14,7 @@ export WHT='\033[1;37m'
 export NC='\033[0m'
 export UPDATED="${GRN}UPDATED${NC}\n"
 export FAILED="${RED}FAILED${NC}\n"
-FAILED () {  [ "$1" ] && printf "${WHT}$1:${NC} $FAILED" || printf "$FAILED"  ; }
+FAILED () {  [ "$1" ] && printf "$1: $FAILED" || printf "$FAILED"  ; }
 UPDATED () { [ "$1" ] && printf "$1: $UPDATED"           || printf "$UPDATED" ; }
 
 
@@ -25,27 +25,39 @@ corona.main () {
     local _cmd="$1" ; shift
 
     case $_cmd in
-          status)   corona.status "$@"                  ;;
-             all)   country_list=($COUNTRY_LIST_ALL)
-                    corona.status "$@"                  ;;
-            view)   corona.view "$@"                    ;;
-             csv)   corona.raw ';' "$@"                 ;;
-             txt)   corona.raw ' ' "$@"                 ;;
-             raw)   corona.raw "$@"                     ;;
-              md)   corona.md $@                        ;;
-             web)   firefox "$source_url"               ;;
-            help)   corona.help                         ;;
-               *)   corona.status "$_cmd" "$@"          ;;
-    esac
+         history|status|\
+        view|raw|md|help)  corona.$_cmd "$@"                   ;;
+                     all)  country_list=($COUNTRY_LIST_ALL)
+                           corona.status "$@"                  ;;
+                     csv)  corona.raw ';' "$@"                 ;;
+                     txt)  corona.raw ' ' "$@"                 ;;
+                     web)  firefox "$source_url"               ;;
+                       *)  corona.status "$_cmd" "$@"          ;;
+        esac
 }
+
+# tc  ҉19
+# C ҉VID-19
+# c ҉o҉r ҈o ҉n ҈a ҉
+#   ҉ COVID-19
+#Status shows on header
+    # spreading
+    # printf "  ҉" | hexdump # 0000000 2020 89d2 0000004
+    # weakening
+    # printf "  ҈" | hexdump # 0000000 2020 88d2 0000004
+    # still there
+    # printf "*"
+    # gone
+    # printf " "
+
 
 
 corona.help() {
-    printf "${WHT}  ҉ terminal-corona help ---------------------------------------------- ${NC}\n"
-    printf "a linux shell script to view current corona infection status worldwide\n"
+    printf "${WHT}COVID-19 status viewer - help ----------------- casa@ujo.guru   ҉ ${NC}\n"
+    printf "a Linux shell script to view current corona infection status worldwide\n"
     printf "\n${WHT}usage:${NC}\t terminal-corona -t|h [output] all|Country List \n"
     printf "\n${WHT}output:${NC}\n"
-    printf "  status [all|List Of Country]  colorful table view \n"
+    printf "  status [all|List Of Country]  colored table view \n"
     printf "  txt                           tight text output \n"
     printf "  csv                           csv output \n"
     printf "  md                            markdown table \n"
@@ -74,64 +86,123 @@ corona.help() {
 
 corona.update() {
     printf "updating data.. "
-    local _clone_location="/tmp/guru/corona"
-    source_file="cases_country.csv"
+    clone_location="/tmp/guru/corona"
+    current_source_file="cases_country.csv"
+    history_source_file="cases_time.csv"
 
-    if ! [[ -d "$_clone_location" ]] ; then
-            mkdir -p "$_clone_location"
-            cd "$_clone_location"
+    if ! [[ -d "$clone_location" ]] ; then
+            mkdir -p "$clone_location"
+            cd "$clone_location"
             git clone -b web-data https://github.com/CSSEGISandData/COVID-19.git
         fi
 
-    source_file="$_clone_location/COVID-19/data/$source_file"
 
-    cd "$_clone_location/COVID-19"
-    if git pull >/dev/null 2>&1 ; then
-            UPDATED
-        else
-            FAILED "repository not found"
-            return 10
-        fi
+    # cd "$clone_location/COVID-19"
+    # if git pull >/dev/null 2>&1 ; then
+    #         UPDATED
+    #     else
+             FAILED "database update"
+    #         return 10
+    #     fi
 
-    if [[ -f "$source_file" ]] ; then
+    current_source_file="$clone_location/COVID-19/data/$current_source_file"
+    history_source_file="$clone_location/COVID-19/data/$history_source_file"
+
+    if [[ -f "$current_source_file" ]] && [[ -f "$history_source_file" ]] ; then
             return 0
         else
-            FAILED "$source_file not found"
+            FAILED "$current_source_file or $history_source_file not found"
             return 10
         fi
+}
+
+corona.get_history () {
+    local _stamp=""
+    local _location="$1"
+    local _output_file="$clone_location/$_location.history"
+    local _temp_file="$clone_location/history.temp"
+    local _data="$(cat $history_source_file | grep $_location)"
+    # _data="${_data//'  '/'_'}"
+    _data="${_data//' '/'_'}"
+    _data=${_data//,/ }
+    echo "${_data[@]}" | cut -f 2-5 -d ' '> "$_temp_file"
+
+    if [[ -f $_output_file ]] ; then rm "$_output_file" ; fi
+
+    while IFS= read -r line ; do
+      _stamp="$(echo $line | cut -f 1 -d ' ')"
+      _data="$(echo $line | cut -f 2-4 -d ' ')"
+      echo "$(date -d $_stamp '+%Y%m%d') $_data" >> "$_output_file"
+    done < "$_temp_file"
+    sort "$_output_file" -o "$_output_file"
 }
 
 
 corona.get_data () {
+    local _data=""
     local _location="$1"
-    _data="$(cat $source_file | grep $_location | head -1)"
-    _data="${_data//'  '/'_'}"
-    _data="${_data//' '/'_'}"
-    _data=${_data//,/ }
-    export data_list=($_data)
+    #local current_date=$(date '+%Y%m%d')
 
+    #echo "${country_list[@]}:$_location"
+    #echo "$target_date:$current_date"
+
+    if ! ((target_date==current_date)) ; then
+            corona.get_history "$_location"
+            local _history_file="$clone_location/$_location.history"
+            _data="$_location 0 $(grep $target_date $_history_file) NA" # | cut -f 2-4 -d ' ')
+            current_data_list=($_data)
+
+            #echo "$_history_date $_history_file"
+        else
+            _data="$(cat $current_source_file | grep $_location | head -1)"
+            _data="${_data//'  '/'_'}"
+            _data="${_data//' '/'_'}"
+            _data=${_data//,/ }
+            local _data_list=($_data)
+            _data_list[1]=$(date -d $(cut -f2 -d '_' <<< ${_data_list[1]}) '+%H:%M:%S')
+            _data_list[2]=$(date -d $(cut -f1 -d '_' <<< ${_data_list[1]}) '+%Y%m%d')
+            #_data_list[2]=$(date -d ${_data_list[2]} '+%Y%m%d')
+            current_data_list=(${_data_list[0]} ${_data_list[1]} ${_data_list[2]} \
+                               ${_data_list[4]} ${_data_list[5]} ${_data_list[6]})
+        fi
 }
+
+
 
 ## Print out
 
+corona.history () {
+    corona.update
+    corona.get_data "$1" "$2"
+    echo "${current_data_list[@]}"
+}
+
+
 corona.country () {
     [ "$1" ] && country_selected="$1"
+
     _last_time="$HOME/corona" ; [ -d "$_last_time" ] || mkdir "$_last_time"
     _last_time="$_last_time/$country_selected.last" ; [ -f "$_last_time" ] || touch "$_last_time"
 
     corona.get_data "$country_selected"
 
-    declare -a _last_list=($(cat $_last_time))
-    declare -a _current_list=(${data_list[4]} ${data_list[5]} ${data_list[6]})
     local _change=""
-    local _time=$(cut -d "_" -f2 <<< ${data_list[1]})
-    local _country="$(cut -c -15 <<< ${data_list[0]})"
+    declare -a _last_list=($(cat $_last_time))
+    declare -a _current_list=(${current_data_list[3]} ${current_data_list[4]} ${current_data_list[5]})
+
+    if ((target_date==current_date)); then
+            _time="${current_data_list[1]}  "
+        else
+            _time=$(date -d ${current_data_list[2]} '+%d.%m.%Y')
+        fi
+
+    local _country="$(cut -c -15 <<< ${current_data_list[0]})"
     _country="${_country//'_'/' '}"
 
     [[ "$timestamp" ]] && printf "%s," "$_time"
 
     printf "${NC}%15s,${CRY}%7s,${RED}%7s,${GRN}%7s,${NC}" \
-           "$_country" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}"
+           "$_country" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}"
 
     if ! ((_current_list[0]==_last_list[0])) ; then
             _change=$((_current_list[0]-_last_list[0]))
@@ -160,16 +231,20 @@ corona.country () {
 
 
 corona.status () {
-    corona.update >/dev/null
-    [[ $header ]] &&    printf "${WHT}  ҉ terminal-corona %40s${NC}\n" " linux shell COVID-19 status viewer 2020"
-    [[ ! $header ]] && [[ $timestamp ]] && printf "${WHT}Updated   "
-    [[ $header ]] ||    printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check) \n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
 
+    corona.update
+    if [[ $header ]]; then
+            #printf "${WHT}  ҉ terminal-corona %40s${NC}\n" " linux shell COVID-19 status viewer 2020"
+            [[ $timestamp ]] && printf "${WHT}Updated     "
+            printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC}(since last check) \n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
+        fi
     if [[ "$1" ]]; then country_list=("$@") ; fi
 
     for _country in ${country_list[@]} ; do
-           corona.country "$_country" | column -t -s$','
+
+            corona.country "$_country" | column -t -s$','
         done
+
 }
 
 
@@ -194,24 +269,25 @@ corona.view () {
                     q|exit|quit) break ;;
                     t|timestamp) [[ $timestamp ]] && timestamp="" || timestamp=true ;;
                        h|header) [[ $header ]]  && header="" || header=true ;;
+
                 esac
         done
 }
 
 
 corona.md () {
-    corona.update >/dev/null
+    corona.update
     if [[ "$1" ]] ; then country_list=("$@") ; fi
     if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
 
     echo
-    printf "Country | Confirmed | Deaths | Recovered | Active | Updated \n"
+    printf "Country | Confirmed | Deaths | Recovered | Updated \n"
     printf " --- | --- | --- | --- | ---\n"
 
     for _country in ${country_list[@]} ; do
             corona.get_data "$_country"
-            printf "%s | %s | %s | %s | %s | %s \n" \
-            "${data_list[0]}" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" "${data_list[1]}"
+            printf "%s | %s | %s | %s |  %s \n" \
+            "${current_data_list[0]}" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
         done
 
     printf "\n*corona status at %s*\n" "$(date)"
@@ -220,36 +296,40 @@ corona.md () {
 
 
 corona.raw () {
-    corona.update >/dev/null
+    corona.update
 
     local _output=""
     local _separator=" "
     if [[ "$1" ]] ; then _separator="$1" ; shift ; fi
     if [[ "$1" ]] ; then country_list=("$@") ; fi
     if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
-    if [[ $header ]] ; then printf "Country%sConfirmed%sDeaths%sRecovered%sActive%sUpdated\n" \
-                                   "$_separator" "$_separator" "$_separator" "$_separator" "$_separator" ; fi
+    if [[ $header ]] ; then printf "Country%sConfirmed%sDeaths%sRecovered%sUpdated\n" \
+                                   "$_separator" "$_separator" "$_separator" "$_separator" ; fi
 
     for _country in ${country_list[@]}; do
             corona.get_data "$_country"
-            printf "%s$_separator%s$_separator%s$_separator%s$_separator%s$_separator%s\n" \
-            "${data_list[0]}" "${data_list[4]}" "${data_list[5]}" "${data_list[6]}" "${data_list[7]}" "${data_list[1]}"
+            printf "%s$_separator%s$_separator%s$_separator%s$_separator%s\n" \
+            "${current_data_list[0]}" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
         done
     #echo "1:'$1' | h:'$header' s:'$_separator' 'o:$_output' 'cl:$country_list'"
     return 0
 }
 
-
 ## Flags, requirements, calling and errors
+
+target_date=$(date '+%Y%m%d')
+current_date=$(date '+%Y%m%d')
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 
-    while getopts 'tih' flag; do
+    while getopts 'di' flag; do
             case "${flag}" in
-                t)  export timestamp=true ; shift ;;
-                h)  export header=true ; shift ;;
+                d)  target_date=$(date -d ${2} '+%Y%m%d') ; shift ; shift ;;
             esac
         done
+
+    timestamp=true
+    header=true
 
     if ! which git >/dev/null; then
         echo "plase install git first!"
