@@ -13,6 +13,7 @@ source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_
 export RED='\033[0;31m'
 export GRN='\033[0;32m'
 export WHT='\033[1;37m'
+export CRY='\033[0;37m'
 export NC='\033[0m'
 export UPDATED="${GRN}UPDATED${NC}\n"
 export FAILED="${RED}FAILED${NC}\n"
@@ -71,8 +72,8 @@ corona.help() {
     printf "\t\t ./terminal-corona.sh raw '_' Barbuda Dominican Kyrgyzstan \n"
     printf "\t\t ./terminal-corona.sh -h view -i 300 \n"
     printf "\t\t ./terminal-corona.sh md all \n"
-    printf "\t\t ./terminal-corona.sh -d 20200220 view \n"
-    printf "\t\t ./terminal-corona.sh history Finland 20200220 20200310 \n"
+    printf "\t\t ./terminal-corona.sh -d 20200122 view \n"
+    printf "\t\t ./terminal-corona.sh history Finland 20200122 20200310 \n"
     return 0
 
 }
@@ -265,8 +266,8 @@ corona.view () {
                     q)  break                                                           ;;
                     t)  [[ $timestamp ]] && timestamp="" || timestamp=true              ;;
                     h)  [[ $header ]]  && header="" || header=true                      ;;
-                    b)  target_date=$(date -d "$target_date - 1 days" +'%Y%m%d')
-                        ((target_date<20200220)) && target_date=20200220                ;;
+                  p|b)  target_date=$(date -d "$target_date - 1 days" +'%Y%m%d')
+                        ((target_date<20200122)) && target_date=20200122                ;;
                     n)  target_date=$(date -d "$target_date + 1 days" +'%Y%m%d')
                         ((target_date>current_date)) && target_date=${current_date}     ;;
                 esac
@@ -279,7 +280,7 @@ corona.history () {
     corona.update
 
     local _country="Finland" ; [[ "$1" ]] &&_country="$1" ; shift
-    local _from=$(date -d 20200220 +'%Y%m%d') ; [[ "$1" ]] &&_from=$(date -d $1 +'%Y%m%d') ; shift
+    local _from=$(date -d 20200122 +'%Y%m%d') ; [[ "$1" ]] &&_from=$(date -d $1 +'%Y%m%d') ; shift
     local _to=$(date -d "$current_date -1 days" +'%Y%m%d') ; [[ "$1" ]] &&_to=$(date -d $1 +'%Y%m%d') ; shift
     local _last_time="$clone_location/$_country.last"
 
@@ -353,7 +354,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     while getopts 'di' flag; do
             case "${flag}" in
                 d)  target_date=$(date -d ${2} '+%Y%m%d')
-                    if ((target_date<20200220)) || ((target_date>current_date)); then
+                    if ((target_date<20200122)) || ((target_date>current_date)); then
                             target_date=${current_date}
                         fi ; shift ; shift ;;
             esac
