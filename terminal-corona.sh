@@ -37,12 +37,15 @@ corona.main () {
           history|status|\
         view|raw|md|help)  corona.$_cmd "$@"                    ;;
                      all)  country_list=($COUNTRY_LIST_ALL)
+                           corona.update
                            corona.status "$@"                   ;;
                      csv)  corona.raw ';' "$@"                  ;;
                      txt)  corona.raw ' ' "$@"                  ;;
                   rebase)  rm $clone_location/* >/dev/null 2>&1 ;;
                      web)  firefox "$source_url"                ;;
-                       *)  corona.status "$_cmd" "$@"           ;;
+                       *)  corona.update
+
+                           corona.status "$_cmd" "$@"           ;;
         esac
 }
 
@@ -96,14 +99,12 @@ corona.update() {
 
     cd "$clone_location/COVID-19"
     if git pull >/dev/null 2>&1 ; then
-            #UPDATED
+            UPDATED $(date '+%H:%M:%S')
             echo >/dev/null
         else
             FAILED "git database update"
             return 10
         fi
-
-
 
     if [[ -f "$current_source_file" ]] && [[ -f "$history_source_file" ]] ; then
             return 0
@@ -245,16 +246,13 @@ corona.country () {
 
 corona.status () {
 
-    corona.update
     if [[ $header ]]; then
-            #printf "${WHT}  ҉ terminal-corona %40s${NC}\n" " linux shell COVID-19 status viewer 2020"
-
             [[ $timestamp ]] && printf "${WHT}Updated        "
             [[ $timestamp ]] && _header_date="$(printf '%15s' 'Country')" || _header_date=$(printf "%15s" "$(date -d $target_date +'%Y.%m.%d') Country")
             printf "${WHT}%s,%7s,%7s,%7s,%7s ${NC} \n" "$_header_date" "Infect" "Death" "Recov" "Change" | column -t -s$','
-
-
-            # printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC} \n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
+        else
+            _header_date=$(printf "%s" "$(date -d $target_date +'%Y.%m.%d')")
+            printf "${WHT}  ҉ terminal-corona $_header_date %s${NC}\n" "- linux shell COVID-19 tracker - casa@ujo.guru 2020"
         fi
     if [[ "$1" ]]; then country_list=("$@") ; fi
 
@@ -303,18 +301,22 @@ corona.view () {
     if [[ "$1" ]] ; then country_list=("$@") ; fi
 
     while : ; do
-            clear
             corona.status
+
             read -n1 -t $_sleep_time -p "" _cmd
             case $_cmd in
                     q)  break                                                           ;;
                     t)  [[ $timestamp ]] && timestamp="" || timestamp=true              ;;
-                    h)  [[ $header ]]  && header="" || header=true                      ;;
+                    h)  [[ $header ]]  && unset header || header=true                   ;;
                   p|b)  target_date=$(date -d "$target_date - 1 days" +'%Y%m%d')
                         ((target_date<20200122)) && target_date=20200122                ;;
                     n)  target_date=$(date -d "$target_date + 1 days" +'%Y%m%d')
                         ((target_date>current_date)) && target_date=${current_date}     ;;
+                   "")  corona.update
+                        target_date=$(date +'%Y%m%d')                                   ;;
+
                 esac
+            clear
 
         done
 }
