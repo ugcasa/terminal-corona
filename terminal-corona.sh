@@ -277,7 +277,7 @@ corona.history () {
     [[ -f $_last_time ]] && rm $_last_time
 
     if [[ $header ]]; then
-            [[ $timestamp ]] && printf "${WHT}Updated     "
+            [[ $timestamp ]] && printf "${WHT}Updated        "
             [[ $timestamp ]] || printf ""
             printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC} \n" " Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
         fi
