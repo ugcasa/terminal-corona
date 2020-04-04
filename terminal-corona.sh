@@ -8,6 +8,9 @@ COUNTRY_LIST_ALL="Australia Austria Canada China Denmark Finland France Germany 
 declare -a country_list=($COUNTRY_LIST)
 country_selected="${country_list[0]}"
 source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv"
+clone_location="/tmp/terminal-corona"
+current_source_file="$clone_location/COVID-19/data/$current_source_file/cases_country.csv"
+history_source_file="$clone_location/COVID-19/data/$history_source_file/cases_time.csv"
 
 # quick decorations from deco.sh for standalone
 export RED='\033[0;31m'
@@ -32,13 +35,14 @@ corona.main () {
 
     case $_cmd in
           history|status|\
-        view|raw|md|help)  corona.$_cmd "$@"                   ;;
+        view|raw|md|help)  corona.$_cmd "$@"                    ;;
                      all)  country_list=($COUNTRY_LIST_ALL)
-                           corona.status "$@"                  ;;
-                     csv)  corona.raw ';' "$@"                 ;;
-                     txt)  corona.raw ' ' "$@"                 ;;
-                     web)  firefox "$source_url"               ;;
-                       *)  corona.status "$_cmd" "$@"          ;;
+                           corona.status "$@"                   ;;
+                     csv)  corona.raw ';' "$@"                  ;;
+                     txt)  corona.raw ' ' "$@"                  ;;
+                  rebase)  rm $clone_location/* >/dev/null 2>&1 ;;
+                     web)  firefox "$source_url"                ;;
+                       *)  corona.status "$_cmd" "$@"           ;;
         esac
 }
 
@@ -83,9 +87,6 @@ corona.help() {
 
 corona.update() {
     #printf "updating git data.. "
-    clone_location="/tmp/terminal-corona"
-    current_source_file="cases_country.csv"
-    history_source_file="cases_time.csv"
 
     if ! [[ -d "$clone_location" ]] ; then
             mkdir -p "$clone_location"
@@ -102,8 +103,7 @@ corona.update() {
             return 10
         fi
 
-    current_source_file="$clone_location/COVID-19/data/$current_source_file"
-    history_source_file="$clone_location/COVID-19/data/$history_source_file"
+
 
     if [[ -f "$current_source_file" ]] && [[ -f "$history_source_file" ]] ; then
             return 0
@@ -120,9 +120,8 @@ corona.get_history () {
     local _output_file="$clone_location/$_location.history"
     local _temp_file="$clone_location/history.temp"
     local _data="$(cat $history_source_file | grep $_location)"
-    sed -i 's/, /_/g' <<<$_data
 
-    _data="${_data//', '/'_'}"
+    #_data="${_data//', '/'_'}"
     _data="${_data//' '/'_'}"
     _data=${_data//','/' '}
     echo "${_data[@]}" | cut -f 2-5 -d ' '> "$_temp_file"
@@ -156,12 +155,23 @@ corona.get_data () {
                 fi
 
             local _history_file="$clone_location/$_location.history"
-            _data="$_location 0 $(grep $target_date $_history_file) NA" # | cut -f 2-4 -d ' ')
 
+            if ! grep "$target_date" "$_history_file" >>/dev/null; then
+                    #echo "no $target_date data published yet"
+                    local _no_data="no $target_date data published yet"
+                    target_date=$(date -d "$target_date -1 days" '+%Y%m%d')
+                fi
+
+            #local _name="$(cat $current_source_file | grep $_location | cut -f1 -d ',')"
+            _data="$(grep $target_date $_history_file)"
+            _data="$_location 0 $_data "
             current_data_list=($_data)
+
         else
+
             _data="$(cat $current_source_file | grep $_location | head -1)"
-            _data="${_data//', '/'_'}"
+
+            # _data="${_data//', '/'_'}"
             _data="${_data//' '/'_'}"
             _data=${_data//,/ }
             local _data_list=($_data)
@@ -195,12 +205,16 @@ corona.country () {
             _time=$(date -d ${current_data_list[2]} '+%d.%m.%Y')
         fi
 
-    local _country="$(cut -c -15 <<< ${current_data_list[0]})"
+    local _country="$(cut -c -18 <<< ${current_data_list[0]})"
     _country="${_country//'_'/' '}"
 
-    [[ "$timestamp" ]] && printf "%s," "$_time"
+    [[ $timestamp ]] && printf "%8s," "$_time"
 
-    printf "${NC}%15s,${CRY}%7s,${RED}%7s,${GRN}%7s,${NC}" \
+    for _i in {3..5}; do
+            (( current_data_list[$_i] == 0 )) && current_data_list[$_i]="-"
+        done
+
+    printf "${NC}%18s,${CRY}%7s,${RED}%7s,${GRN}%7s,${NC}" \
            "$_country" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}"
 
     if ! ((_current_list[0]==_last_list[0])) ; then
@@ -234,8 +248,13 @@ corona.status () {
     corona.update
     if [[ $header ]]; then
             #printf "${WHT}  ҉ terminal-corona %40s${NC}\n" " linux shell COVID-19 status viewer 2020"
-            [[ $timestamp ]] && printf "${WHT}Updated     "
-            printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC} \n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
+
+            [[ $timestamp ]] && printf "${WHT}Updated        "
+            [[ $timestamp ]] && _header_date="$(printf '%15s' 'Country')" || _header_date=$(printf "%15s" "$(date -d $target_date +'%Y.%m.%d') Country")
+            printf "${WHT}%s,%7s,%7s,%7s,%7s ${NC} \n" "$_header_date" "Infect" "Death" "Recov" "Change" | column -t -s$','
+
+
+            # printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC} \n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
         fi
     if [[ "$1" ]]; then country_list=("$@") ; fi
 
@@ -243,6 +262,30 @@ corona.status () {
             corona.country "$_country" | column -t -s$','
         done
 
+}
+
+
+corona.history () {
+    corona.update
+
+    local _country="Finland" ; [[ "$1" ]] &&_country="$1" ; shift
+    local _from=$(date -d 20200122 +'%Y%m%d') ; [[ "$1" ]] &&_from=$(date -d $1 +'%Y%m%d') ; shift
+    local _to=$(date -d "$current_date -1 days" +'%Y%m%d') ; [[ "$1" ]] &&_to=$(date -d $1 +'%Y%m%d') ; shift
+    local _last_time="$clone_location/$_country.last"
+
+    [[ -f $_last_time ]] && rm $_last_time
+
+    if [[ $header ]]; then
+            [[ $timestamp ]] && printf "${WHT}Updated     "
+            [[ $timestamp ]] || printf ""
+            printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC} \n" " Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
+        fi
+
+    while [[ $_from -le $_to ]] ; do
+            _from=$(date -d "$_from + 1 day" +"%Y%m%d")
+            target_date=$_from
+            corona.country "$_country" | column -t -s$','
+        done
 }
 
 
@@ -273,31 +316,6 @@ corona.view () {
                         ((target_date>current_date)) && target_date=${current_date}     ;;
                 esac
 
-        done
-}
-
-
-corona.history () {
-    corona.update
-
-    local _country="Finland" ; [[ "$1" ]] &&_country="$1" ; shift
-    local _from=$(date -d 20200122 +'%Y%m%d') ; [[ "$1" ]] &&_from=$(date -d $1 +'%Y%m%d') ; shift
-    local _to=$(date -d "$current_date -1 days" +'%Y%m%d') ; [[ "$1" ]] &&_to=$(date -d $1 +'%Y%m%d') ; shift
-    local _last_time="$clone_location/$_country.last"
-
-    [[ -f $_last_time ]] && rm $_last_time
-
-
-    if [[ $header ]]; then
-            [[ $timestamp ]] && printf "${WHT}Updated     "
-            printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC} \n" "Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
-        fi
-
-
-    while [[ $_from -le $_to ]] ; do
-            _from=$(date -d "$_from + 1 day" +"%Y%m%d")
-            target_date=$_from
-            corona.country "$_country" | column -t -s$','
         done
 }
 
