@@ -82,7 +82,7 @@ corona.help() {
 
 corona.update() {
     #printf "updating git data.. "
-    clone_location="/tmp/guru/corona"
+    clone_location="/tmp/terminal-corona"
     current_source_file="cases_country.csv"
     history_source_file="cases_time.csv"
 
