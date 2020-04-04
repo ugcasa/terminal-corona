@@ -61,7 +61,7 @@ corona.help() {
     printf "                                   q     quit from loop \n"
     printf "  help                           help view \n\n"
     printf "${WHT}flags:${NC}\n"
-    printf "  -d                             date  \n\n"
+    printf "  -d                             date in format YYYYMMDD \n\n"
     printf "All except view history can take argument 'all' to list all countries status \n"
     printf "or list of country typed with capital first letter. If left blanc county \n"
     printf "of interest is used. Flags are place oriented and cannot be combined. \n"
@@ -71,7 +71,10 @@ corona.help() {
     printf "\t\t ./terminal-corona.sh raw '_' Barbuda Dominican Kyrgyzstan \n"
     printf "\t\t ./terminal-corona.sh -h view -i 300 \n"
     printf "\t\t ./terminal-corona.sh md all \n"
+    printf "\t\t ./terminal-corona.sh -d 20200220 view \n"
+    printf "\t\t ./terminal-corona.sh history Finland 20200220 20200310 \n"
     return 0
+
 }
 
 
