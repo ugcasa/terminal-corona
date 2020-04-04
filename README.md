@@ -16,12 +16,15 @@ https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv
 ## Screenshot
 
 ![](terminal-corona.png)
+
 *./terminal-corona.sh*
 
 ![](terminal-corona-view.png)
+
 *./terminal-corona.sh view*
 
 ![](terminal-corona-history.png)
+
 *./terminal-corona.sh history Spain 20200222 20200403*
 
 ## Help output
