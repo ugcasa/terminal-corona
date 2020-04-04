@@ -9,8 +9,8 @@ declare -a country_list=($COUNTRY_LIST)
 country_selected="${country_list[0]}"
 source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv"
 clone_location="/tmp/terminal-corona"
-current_source_file="$clone_location/COVID-19/data/$current_source_file/cases_country.csv"
-history_source_file="$clone_location/COVID-19/data/$history_source_file/cases_time.csv"
+current_source_file="$clone_location/COVID-19/data/cases_country.csv"
+history_source_file="$clone_location/COVID-19/data/cases_time.csv"
 
 # quick decorations from deco.sh for standalone
 export RED='\033[0;31m'
@@ -26,28 +26,32 @@ UPDATED () { [ "$1" ] && printf "$1: $UPDATED" || printf "$UPDATED" ; }
 DONE () { [ "$1" ] && printf "$1: $DONE" || printf "$DONE" ; }
 
 
-
 # User interface
 
 corona.main () {
 
-    local _cmd="$1" ; shift
 
+
+    local _cmd="$1" ; shift
     case $_cmd in
           history|status|\
-        view|raw|md|help)  corona.$_cmd "$@"                    ;;
+        view|raw|md|help)  corona.update
+                           corona.$_cmd "$@"                    ;;
                      all)  country_list=($COUNTRY_LIST_ALL)
                            corona.update
                            corona.status "$@"                   ;;
-                     csv)  corona.raw ';' "$@"                  ;;
-                     txt)  corona.raw ' ' "$@"                  ;;
+                     csv)  corona.update
+                           corona.raw ';' "$@"                  ;;
+                     txt)  corona.update
+                           corona.raw ' ' "$@"                  ;;
                   rebase)  rm $clone_location/* >/dev/null 2>&1 ;;
+                 restart)  rm -fr $clone_location >/dev/null 2>&1 ;;
                      web)  firefox "$source_url"                ;;
                        *)  corona.update
-
                            corona.status "$_cmd" "$@"           ;;
         esac
 }
+
 
 corona.help() {
     printf "${WHT}COVID-19 status viewer - help ----------------- casa@ujo.guru   ҉ ${NC}\n"
@@ -85,11 +89,10 @@ corona.help() {
 
 }
 
-
-## Functional
+## get and update
 
 corona.update() {
-    #printf "updating git data.. "
+    printf "updating git data.. "
 
     if ! [[ -d "$clone_location" ]] ; then
             mkdir -p "$clone_location"
@@ -114,8 +117,9 @@ corona.update() {
         fi
 }
 
+
 corona.get_history () {
-    #printf "analyzing history.. "
+    #printf "analyzing history data.. "
     local _stamp=""
     local _location="$1"
     local _output_file="$clone_location/$_location.history"
@@ -135,7 +139,7 @@ corona.get_history () {
             echo "$(date -d $_stamp '+%Y%m%d') $_data" >> "$_output_file"
         done < "$_temp_file"
     sort "$_output_file" -o "$_output_file"
-    #UPDATED "$_location"
+    #DONE "$_location"
 }
 
 
@@ -185,8 +189,7 @@ corona.get_data () {
 }
 
 
-
-## Print out
+## Printouts
 
 corona.country () {
     [ "$1" ] && country_selected="$1"
@@ -264,7 +267,7 @@ corona.status () {
 
 
 corona.history () {
-    corona.update
+    #corona.update
 
     local _country="Finland" ; [[ "$1" ]] &&_country="$1" ; shift
     local _from=$(date -d 20200122 +'%Y%m%d') ; [[ "$1" ]] &&_from=$(date -d $1 +'%Y%m%d') ; shift
@@ -324,7 +327,7 @@ corona.view () {
 
 corona.md () {
 
-    corona.update
+    #corona.update
 
     if [[ "$1" ]] ; then country_list=("$@") ; fi
     if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
@@ -346,7 +349,7 @@ corona.md () {
 
 corona.raw () {
 
-    corona.update
+    #corona.update
 
     local _output=""
     local _separator=" "

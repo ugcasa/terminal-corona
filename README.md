@@ -1,12 +1,10 @@
 # terminal-corona view COVID-19 status in linux shell
 
-Linux shell script to view current corona infection status per country.
+Linux shell script to view current corona infection status wold wide (except. Korea).
 
-1. clone web-data branch from https://github.com/CSSEGISandData/COVID-19.git to temp folder
-2. parse interesting list country data and show it in terminal.
-
-Table, list and single line output plus loop mode with settable update time.
-
+- view mode with history browser
+- country history tables with starting and ending parameters
+- markdown table, text and raw output for documentation use
 
 ## Data source
 
@@ -19,10 +17,15 @@ https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv
 
 ![](terminal-corona.png)"
 
+![](terminal-corona-view.png)"
+
+![](terminal-corona-history.png)"
+
 
 ## Help output
 
-    COVID-19 status viewer - help ----------------- casa@ujo.guru   ҉
+    COVID-19 status viewer - help ---------------------------- casa@ujo.guru   ҉
+
     a Linux shell script to view current corona infection status worldwide
 
     usage:   terminal-corona -t|h [output] all|Country List
