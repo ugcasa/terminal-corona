@@ -2,7 +2,7 @@
 # ujo.guru corona status viewer - a linux shell script to view current corona infection status per country. casa@ujo.guru 2020
 # data source is CSSE at Johns Hopkins University COVID-19 git database
 
-COUNTRY_LIST="Finland Sweden Russia Estonia Norway Iceland Denmark Germany France Italy Spain Greece Kingdom Iran India Thailand Vietnam China Japan US"
+COUNTRY_LIST="Finland Estonia Sweden Russia Norway Latvia Lithuania Denmark Iceland Netherlands Belarus Poland Belgium Germany France Spain Italy Portugal Kingdom Ireland Ukraine Greece Tunisia Turkey Egypt Iraq Iran Brazil Canada US Mexico Cuba Jamaica Bahamas Ecuador Chile India Thailand Vietnam Japan Nepal China"
 COUNTRY_LIST_ALL="Australia Austria Canada China Denmark Finland France Germany Iceland Ireland Italy Netherlands Norway Russia Sweden Switzerland US Afghanistan Albania Algeria Andorra Angola Antigua Argentina Armenia Azerbaijan Bahamas Bahrain Bangladesh Barbados Belarus Belgium Belize Benin Bhutan Bolivia Bosnia Botswana Brazil Brunei Bulgaria Burkina Burma Burundi Cabo Cambodia Cameroon Central Chad Chile Colombia Congo Costa Cote Croatia Cuba Cyprus Czechia Diamond Djibouti Dominica Dominican Ecuador Egypt Equatorial Eritrea Estonia Eswatini Ethiopia Fiji Gabon Gambia Georgia Ghana Greece Grenada Guatemala Guinea Guinea-Bissau Guyana Haiti Honduras Hungary India Indonesia Iran Iraq Israel Jamaica Japan Jordan Kazakhstan Kenya Kosovo Kuwait Kyrgyzstan Laos Latvia Lebanon Liberia Libya Liechtenstein Lithuania Luxembourg Zaandam Madagascar Malaysia Maldives Mali Malta Mauritania Mauritius Mexico Moldova Monaco Mongolia Montenegro Morocco Mozambique Namibia Nepal Nicaragua Niger Nigeria Macedonia Oman Pakistan Panama Papua Paraguay Peru Philippines Poland Portugal Qatar Romania Rwanda Lucia Grenadines Marino Arabia Senegal Serbia Seychelles Sierra Singapore Slovakia Slovenia Somalia Spain Lanka Sudan Suriname Syria Taiwan Tanzania Thailand Timor-Leste Togo Trinidad Tunisia Turkey Uganda Ukraine Uruguay Uzbekistan US Kingdom Venezuela Vietnam Zambia Zimbabwe"
 
 declare -a country_list=($COUNTRY_LIST)
@@ -120,9 +120,11 @@ corona.get_history () {
     local _output_file="$clone_location/$_location.history"
     local _temp_file="$clone_location/history.temp"
     local _data="$(cat $history_source_file | grep $_location)"
+    sed -i 's/, /_/g' <<<$_data
 
+    _data="${_data//', '/'_'}"
     _data="${_data//' '/'_'}"
-    _data=${_data//,/ }
+    _data=${_data//','/' '}
     echo "${_data[@]}" | cut -f 2-5 -d ' '> "$_temp_file"
 
     if [[ -f $_output_file ]] ; then rm "$_output_file" ; fi
@@ -147,12 +149,11 @@ corona.get_data () {
                     corona.get_history "$_location"
                 fi
 
-            local _date_modified=$(date -d $(stat "$clone_location/$_location.history" |grep Modify|cut -f2 -d ' ') +'%Y%m%d')
+            local _date_modified=$(date -d $(stat "$clone_location/$_location.history" | grep Modify | cut -f2 -d ' ') +'%Y%m%d')
 
             if ((_date_modified<current_date)) ; then
                     corona.get_history "$_location"
                 fi
-
 
             local _history_file="$clone_location/$_location.history"
             _data="$_location 0 $(grep $target_date $_history_file) NA" # | cut -f 2-4 -d ' ')
@@ -160,7 +161,7 @@ corona.get_data () {
             current_data_list=($_data)
         else
             _data="$(cat $current_source_file | grep $_location | head -1)"
-            _data="${_data//'  '/'_'}"
+            _data="${_data//', '/'_'}"
             _data="${_data//' '/'_'}"
             _data=${_data//,/ }
             local _data_list=($_data)
