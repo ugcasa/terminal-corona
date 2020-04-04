@@ -17,15 +17,17 @@ https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv
 
 ![](terminal-corona.png)
 
-*./terminal-corona.sh*
+*(./terminal-corona.sh (-t is now default))*
+
 
 ![](terminal-corona-view.png)
 
-*./terminal-corona.sh view*
+*(./terminal-corona.sh view headers off timestamps off))*
+
 
 ![](terminal-corona-history.png)
 
-*./terminal-corona.sh history Spain 20200222 20200403*
+*(./terminal-corona.sh history Spain 20200222 20200403)*
 
 ## Help output
 
