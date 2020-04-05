@@ -3,6 +3,7 @@
 # data source is CSSE at Johns Hopkins University COVID-19 git database
 
 COUNTRY_LIST="Finland Estonia Sweden Russia Norway Latvia Lithuania Denmark Iceland Netherlands Belarus Poland Belgium Germany France Spain Italy Portugal Kingdom Ireland Ukraine Greece Tunisia Turkey Egypt Iraq Iran Brazil Canada US Mexico Cuba Jamaica Bahamas Ecuador Chile India Thailand Vietnam Japan Nepal China"
+COUNTRY_LIST_SHORT="Finland Estonia Sweden Russia Iceland Germany France Spain Italy Kingdom Iran Brazil Canada US India Thailand Vietnam China"
 COUNTRY_LIST_ALL="Australia Austria Canada China Denmark Finland France Germany Iceland Ireland Italy Netherlands Norway Russia Sweden Switzerland US Afghanistan Albania Algeria Andorra Angola Antigua Argentina Armenia Azerbaijan Bahamas Bahrain Bangladesh Barbados Belarus Belgium Belize Benin Bhutan Bolivia Bosnia Botswana Brazil Brunei Bulgaria Burkina Burma Burundi Cabo Cambodia Cameroon Central Chad Chile Colombia Congo Costa Cote Croatia Cuba Cyprus Czechia Diamond Djibouti Dominica Dominican Ecuador Egypt Equatorial Eritrea Estonia Eswatini Ethiopia Fiji Gabon Gambia Georgia Ghana Greece Grenada Guatemala Guinea Guinea-Bissau Guyana Haiti Honduras Hungary India Indonesia Iran Iraq Israel Jamaica Japan Jordan Kazakhstan Kenya Kosovo Kuwait Kyrgyzstan Laos Latvia Lebanon Liberia Libya Liechtenstein Lithuania Luxembourg Zaandam Madagascar Malaysia Maldives Mali Malta Mauritania Mauritius Mexico Moldova Monaco Mongolia Montenegro Morocco Mozambique Namibia Nepal Nicaragua Niger Nigeria Macedonia Oman Pakistan Panama Papua Paraguay Peru Philippines Poland Portugal Qatar Romania Rwanda Lucia Grenadines Marino Arabia Senegal Serbia Seychelles Sierra Singapore Slovakia Slovenia Somalia Spain Lanka Sudan Suriname Syria Taiwan Tanzania Thailand Timor-Leste Togo Trinidad Tunisia Turkey Uganda Ukraine Uruguay Uzbekistan US Kingdom Venezuela Vietnam Zambia Zimbabwe"
 
 declare -a country_list=($COUNTRY_LIST)
@@ -30,25 +31,25 @@ DONE () { [ "$1" ] && printf "$1: $DONE" || printf "$DONE" ; }
 
 corona.main () {
 
-
-
     local _cmd="$1" ; shift
     case $_cmd in
-          history|status|\
-        view|raw|md|help)  corona.update
-                           corona.$_cmd "$@"                    ;;
+          history|status|view|md|help)
+                           corona.$_cmd "$@"                        ;;
+                     raw)  corona.raw "$@"                          ;;
+                     csv)  corona.raw ';' "$@"                      ;;
+                     txt)  corona.raw ' ' "$@"                      ;;
+                  rebase)  rm "$clone_location/*" >/dev/null 2>&1   ;;
+                  remove)  rm -fr "$clone_location" >/dev/null 2>&1 ;;
+                     web)  firefox "$source_url"                    ;;
+             phone|short)  country_list=($COUNTRY_LIST_SHORT)
+                           unset timestamp
+                           corona.update
+                           corona.status "$@"                       ;;
                      all)  country_list=($COUNTRY_LIST_ALL)
                            corona.update
-                           corona.status "$@"                   ;;
-                     csv)  corona.update
-                           corona.raw ';' "$@"                  ;;
-                     txt)  corona.update
-                           corona.raw ' ' "$@"                  ;;
-                  rebase)  rm $clone_location/* >/dev/null 2>&1 ;;
-                 restart)  rm -fr $clone_location >/dev/null 2>&1 ;;
-                     web)  firefox "$source_url"                ;;
+                           corona.status "$@"                       ;;
                        *)  corona.update
-                           corona.status "$_cmd" "$@"           ;;
+                           corona.status "$_cmd" "$@"               ;;
         esac
 }
 
@@ -71,6 +72,8 @@ corona.help() {
     printf "                                   h     headers on or off toggle \n"
     printf "                                   t     time stamp toggle \n"
     printf "                                   q     quit from loop \n"
+    printf "  rebase                         reset history data \n"
+    printf "  remove                         remove database \n"
     printf "  help                           help view \n\n"
     printf "${WHT}flags:${NC}\n"
     printf "  -d                             date in format YYYYMMDD \n\n"
@@ -92,7 +95,7 @@ corona.help() {
 ## get and update
 
 corona.update() {
-    printf "updating git data.. "
+    [[ $timestamp ]] && printf "updating git data.. "
 
     if ! [[ -d "$clone_location" ]] ; then
             mkdir -p "$clone_location"
@@ -102,8 +105,7 @@ corona.update() {
 
     cd "$clone_location/COVID-19"
     if git pull >/dev/null 2>&1 ; then
-            UPDATED $(date '+%H:%M:%S')
-            echo >/dev/null
+            [[ $timestamp ]] && UPDATED $(date '+%H:%M:%S')
         else
             FAILED "git database update"
             return 10
@@ -291,6 +293,9 @@ corona.history () {
 
 
 corona.view () {
+
+    corona.update
+
     local _sleep_time=3600
 
     case "$1" in -i)    shift
@@ -327,8 +332,8 @@ corona.view () {
 
 corona.md () {
 
-    #corona.update
-
+    unset timestamp
+    corona.update
     if [[ "$1" ]] ; then country_list=("$@") ; fi
     if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
 
@@ -349,8 +354,8 @@ corona.md () {
 
 corona.raw () {
 
-    #corona.update
-
+    unset timestamp
+    corona.update
     local _output=""
     local _separator=" "
 
