@@ -6,7 +6,7 @@ COUNTRY_LIST="Finland Estonia Sweden Russia Norway Latvia Lithuania Denmark Icel
 COUNTRY_LIST_SHORT="Finland Estonia Sweden Russia Iceland Germany France Spain Italy Kingdom Iran Brazil Canada US India Thailand Vietnam China"
 COUNTRY_LIST_ALL="Australia Austria Canada China Denmark Finland France Germany Iceland Ireland Italy Netherlands Norway Russia Sweden Switzerland US Afghanistan Albania Algeria Andorra Angola Antigua Argentina Armenia Azerbaijan Bahamas Bahrain Bangladesh Barbados Belarus Belgium Belize Benin Bhutan Bolivia Bosnia Botswana Brazil Brunei Bulgaria Burkina Burma Burundi Cabo Cambodia Cameroon Central Chad Chile Colombia Congo Costa Cote Croatia Cuba Cyprus Czechia Diamond Djibouti Dominica Dominican Ecuador Egypt Equatorial Eritrea Estonia Eswatini Ethiopia Fiji Gabon Gambia Georgia Ghana Greece Grenada Guatemala Guinea Guinea-Bissau Guyana Haiti Honduras Hungary India Indonesia Iran Iraq Israel Jamaica Japan Jordan Kazakhstan Kenya Kosovo Kuwait Kyrgyzstan Laos Latvia Lebanon Liberia Libya Liechtenstein Lithuania Luxembourg Zaandam Madagascar Malaysia Maldives Mali Malta Mauritania Mauritius Mexico Moldova Monaco Mongolia Montenegro Morocco Mozambique Namibia Nepal Nicaragua Niger Nigeria Macedonia Oman Pakistan Panama Papua Paraguay Peru Philippines Poland Portugal Qatar Romania Rwanda Lucia Grenadines Marino Arabia Senegal Serbia Seychelles Sierra Singapore Slovakia Slovenia Somalia Spain Lanka Sudan Suriname Syria Taiwan Tanzania Thailand Timor-Leste Togo Trinidad Tunisia Turkey Uganda Ukraine Uruguay Uzbekistan US Kingdom Venezuela Vietnam Zambia Zimbabwe"
 
-declare -a country_list=($COUNTRY_LIST)
+declare -a country_list=("$COUNTRY_LIST")
 country_selected="${country_list[0]}"
 source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv"
 clone_location="/tmp/terminal-corona"
@@ -41,10 +41,13 @@ corona.main () {
                   rebase)  rm "$clone_location/*" >/dev/null 2>&1   ;;
                   remove)  rm -fr "$clone_location" >/dev/null 2>&1 ;;
                      web)  firefox "$source_url"                    ;;
-             phone|short)  country_list=($COUNTRY_LIST_SHORT)
+                   short)  country_list=($COUNTRY_LIST_SHORT)
                            unset timestamp
                            corona.update
                            corona.status "$@"                       ;;
+                   phone)  unset timestamp
+                           country_list=($COUNTRY_LIST_SHORT)
+                           corona.view                              ;;
                      all)  country_list=($COUNTRY_LIST_ALL)
                            corona.update
                            corona.status "$@"                       ;;
@@ -294,8 +297,6 @@ corona.history () {
 
 corona.view () {
 
-    corona.update
-
     local _sleep_time=3600
 
     case "$1" in -i)    shift
@@ -305,12 +306,11 @@ corona.view () {
                             fi
         esac
 
-    if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
     if [[ "$1" ]] ; then country_list=("$@") ; fi
 
+    corona.update
     while : ; do
             corona.status
-
             read -n1 -t $_sleep_time -p "" _cmd
             case $_cmd in
                     q)  break                                                           ;;
@@ -322,7 +322,6 @@ corona.view () {
                         ((target_date>current_date)) && target_date=${current_date}     ;;
                    "")  corona.update
                         target_date=$(date +'%Y%m%d')                                   ;;
-
                 esac
             clear
 
@@ -398,7 +397,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         exit 123
         fi
 
-    corona.main $@
+    corona.main "$@"
     exit 0
 fi
 
