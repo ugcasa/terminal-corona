@@ -310,6 +310,7 @@ corona.view () {
 
     corona.update
     while : ; do
+            current_date=$(date '+%Y%m%d')
             corona.status
             read -n1 -t $_sleep_time -p "" _cmd
             case $_cmd in
