@@ -301,7 +301,8 @@ corona.status () {
         done
 
     #echo "summary: $total_infected $total_death $total_recov"
-    echo "summary: ${total_count_list[1]} ${total_count_list[2]} ${total_count_list[3]}"
+    #echo "summary: ${total_count_list[1]} ${total_count_list[2]} ${total_count_list[3]}"
+    echo "summary: ${total_count_list[@]}
 
 }
 
