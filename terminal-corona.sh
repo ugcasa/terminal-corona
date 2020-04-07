@@ -12,7 +12,8 @@ declare source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/dat
 declare clone_location="/tmp/terminal-corona"
 declare current_source_file="$clone_location/COVID-19/data/cases_country.csv"
 declare history_source_file="$clone_location/COVID-19/data/cases_time.csv"
-declare -a total_count_list=()
+declare -a total_count_list=(100 100 100 100 100)
+declare total_death=0
 
 # quick decorations from deco.sh for standalone
 RED='\033[0;31m'
@@ -239,13 +240,12 @@ corona.country () {
             _ii=$((_ii+1))
             # echo "$_ii:$_i"
             printf "%s + %s = " ${total_count_list[$_ii]} ${current_data_list[$_i]}
-            total_count_list[$_ii]=$((total_count_list[_ii] + current_data_list[_i]))
+            eval total_count_list[$_ii]=$((total_count_list[_ii] + current_data_list[_i]))
             echo "'${total_count_list[$_ii]}'" #, ei toimi, laskee muttei data siirry globaaliin listamuuttujaan
             (( current_data_list[$_i] == 0 )) && current_data_list[$_i]="-"
         done
     # echo "$total_death + ${current_data_list[4]}"
 
-    total_death=${total_count_list[2]}
     # echo "is $total_death"
     # #total_recov="$((total_recov+current_data_list[5]))"
 
@@ -282,9 +282,6 @@ corona.country () {
 
 
 corona.status () {
-    declare total_death=0
-    declare total_infected=0
-    declare total_recov=0
 
     if [[ $header ]]; then
             [[ $timestamp ]] && printf "${WHT}Updated        "
@@ -302,7 +299,7 @@ corona.status () {
 
     #echo "summary: $total_infected $total_death $total_recov"
     #echo "summary: ${total_count_list[1]} ${total_count_list[2]} ${total_count_list[3]}"
-    echo "summary: ${total_count_list[@]}
+    echo "summary: ${total_count_list[@]}"
 
 }
 
