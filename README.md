@@ -1,6 +1,6 @@
 # terminal-corona view COVID-19 status in linux shell
 
-Linux shell script to view current corona infection status wold wide (except. Korea).
+Linux shell script to view current corona infection status wold wide.
 
 - view mode with history browser
 - country history tables with starting and ending parameters
