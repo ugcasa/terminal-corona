@@ -39,9 +39,9 @@ corona.main () {
                      raw)  corona.raw "$@"                          ;;
                      csv)  corona.raw ';' "$@"                      ;;
                      txt)  corona.raw ' ' "$@"                      ;;
-                  rebase)  rm -f "$clone_location/\*.history"
-                           rm -f "$clone_location/\*.last" ;; #>/dev/null 2>&1   ;;
-                  remove)  rm -fr "$clone_location" ;; #>/dev/null 2>&1 ;;
+                  rebase)  rm -f "$clone_location/*.history"
+                           rm -f "$clone_location/*.last"           ;;
+                  remove)  rm -fr "$clone_location"                 ;;
                      web)  firefox "$source_url"                    ;;
                    short)  country_list=($COUNTRY_LIST_SHORT)
                            unset timestamp
@@ -61,7 +61,7 @@ corona.main () {
 
 corona.help() {
 
-    printf "${WHT}COVID-19 status viewer - help ----------------- casa@ujo.guru   ҉ ${NC}\n"
+    printf "${WHT}COVID-19 status viewer   ҉ help ------------------------- casa@ujo.guru${NC}\n"
     printf "a Linux shell script to view current corona infection status worldwide\n"
 
     printf "\n${WHT}usage:${NC}\t terminal-corona -t|h [output] all|short|List Country\n"
@@ -74,7 +74,7 @@ corona.help() {
     printf "  md [all|short or list]         markdown table \n"
     printf "  raw 'separator'                raw output with selectable separator \n"
     printf "  web                            open web view in source github page \n"
-    printf "  view -i 'sec'                  status loop, updates hourly or input (s) \n"
+    printf "  view -i 'sec'                  status loop, updates hourly or input) \n"
     printf "                                 loop commands:\n"
     printf "                                   n|p   jump to next or previous day \n"
     printf "                                   h     headers on or off toggle \n"
@@ -87,26 +87,27 @@ corona.help() {
     printf "${WHT}flags:${NC}\n"
     printf "  -d                             date in format YYYYMMDD \n\n"
     printf "All except history can take argument 'all' or 'short' \n"
-    printf "or list of countriesies typed with capital first letter. If country is left blank \n"
-    printf "default country list is used. Flags are place oriented and cannot be combined. \n"
+    printf "or list of countriesies typed with capital first letter. If country is \n"
+    printf "left blank default country list is used. Flags are place oriented and \n"
+    printf "cannot be combined. \n"
 
     printf "\n${WHT}examples:${NC}\n"
-    printf "  %s\n\t${WHT}%s${NC}\n" "# current status of these three countries"\
-                                     "./terminal-corona.sh Estonia Sweden Russia"
-    printf "  %s\n\t${WHT}%s${NC}\n" "# printout current status in csv format"\
-                                     "./terminal-corona.sh csv Germany France Egypt"
-    printf "  %s\n\t${WHT}%s${NC}\n" "# printout with given separator '_'"\
-                                     "./terminal-corona.sh raw '_' Barbuda Dominican Kyrgyzstan"
-    printf "  %s\n\t${WHT}%s${NC}\n" "# update status in every 5 minutes"\
-                                     "./terminal-corona.sh view -i 300"
-    printf "  %s\n\t${WHT}%s${NC}\n" "# printout all known countries current status in markdown format"\
-                                     "./terminal-corona.sh md all"
-    printf "  %s\n\t${WHT}%s${NC}\n" "# to show day status in history"\
-                                     "./terminal-corona.sh -d 20200122 status"
-    printf "  %s\n\t${WHT}%s${NC}\n" "# to navigate history from first record"\
-                                     "./terminal-corona.sh -d 20200122 view"
-    printf "  %s\n\t${WHT}%s${NC}\n" "# print out history between given day stamps"\
-                                     "./terminal-corona.sh history Spain 20200122 20200310"
+    printf "  %-40s\n\t${WHT}%s${NC}\n" \
+           "current status of countries"             "./terminal-corona.sh Estonia Sweden Russia"
+    printf "  %-40s\n\t${WHT}%s${NC}\n" \
+           "printout current status in csv format"   "./terminal-corona.sh csv Germany France Egypt"
+    printf "  %-40s\n\t${WHT}%s${NC}\n" \
+           "printout with given separator '_'"       "./terminal-corona.sh raw '_' Barbuda Dominican Kyrgyzstan"
+    printf "  %-40s\n\t${WHT}%s${NC}\n" \
+           "update status in every 5 minutes"        "./terminal-corona.sh view -i 300"
+    printf "  %-40s\n\t${WHT}%s${NC}\n" \
+           "printout in markdown"                    "./terminal-corona.sh md all"
+    printf "  %-40s\n\t${WHT}%s${NC}\n" \
+           "to show day status in history"           "./terminal-corona.sh -d 20200122 status"
+    printf "  %-40s\n\t${WHT}%s${NC}\n" \
+           "to navigate history from first record"   "./terminal-corona.sh -d 20200122 view"
+    printf "  %-40s\n\t${WHT}%s${NC}\n" \
+           "history between given day stamps"        "./terminal-corona.sh history Spain 20200122 20200310"
     return 0
 }
 
@@ -185,8 +186,7 @@ corona.get_history () {
     _data="${_data//' ('/'_'}"
     _data="${_data//')'/''}"
     _data="${_data//' '/'_'}"
-    _data=${_data//','/' '}                 # split data
-    #_data=${_data//','/';'}
+    _data=${_data//','/' '}
 
     echo "${_data[@]}" | cut -f 2-5 -d ' '> "$_temp_file"
 
@@ -268,7 +268,7 @@ corona.country () {
 
     # get nice country name
     _country_name="$(cut -c -18 <<< ${current_data_list[0]})"
-    _country_name="${_country_name//'_'/' '}"                              # remove combiner
+    _country_name="${_country_name//'_'/' '}"                    # remove combiner
 
     # date stamp
     if ((target_date==current_date)); then                       # select date
@@ -318,10 +318,12 @@ corona.status () {
     if [[ $header ]]; then
             [[ $timestamp ]] && printf "${WHT}Updated        "
             [[ $timestamp ]] && _header_date="$(printf '%15s' 'Country')" || _header_date=$(printf "%15s" "$(date -d $target_date +'%d.%m.%Y') Country")
-            printf "${WHT}%s,%9s,%9s,%9s,%9s ${NC} \n" "$_header_date" "Infect" "Death" "Recov" "Change" | column -t -s$','
+            printf "${WHT}%s,%9s,%9s,%9s,%9s ${NC} \n" \
+                   "$_header_date" "Infect" "Death" "Recov" "Change" | column -t -s$','
         else
             _header_date=$(printf "%s" "$(date -d $target_date +'%d.%m.%Y')")
-            printf "${WHT}  ҉ terminal-corona $_header_date %s${NC}\n" "- linux shell COVID-19 tracker - casa@ujo.guru 2020"
+            printf "${WHT}  ҉ terminal-corona $_header_date %s${NC}\n" \
+                   "- linux shell COVID-19 tracker - casa@ujo.guru 2020"
         fi
 
     # get and printout country data and add to summary
@@ -337,7 +339,8 @@ corona.status () {
 
     # printout summary
     [[ $timestamp ]] && printf "${WHT}%s" "$(date -d $target_date +'%d.%m.%Y')  "
-    printf "${WHT}%18s %10s %10s %10s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}"
+    printf "${WHT}%18s %10s %10s %10s${NC}\n" "Summary" "${total_count_list[0]}" \
+           "${total_count_list[1]}" "${total_count_list[2]}"
 }
 
 
@@ -386,7 +389,7 @@ corona.view () {
             corona.status
             read -n1 -t $_sleep_time -p "[q|p|b|n|t|h]: " _cmd
             case $_cmd in
-                    q)  echo " - take care" ; break                                     ;;
+                    q)  printf " - take care!${NC}\n" ; break                           ;;
                     t)  [[ $timestamp ]] && timestamp="" || timestamp=true              ;;
                     h)  [[ $header ]]  && unset header || header=true                   ;;
                   p|b)  target_date=$(date -d "$target_date - 1 days" +'%Y%m%d')
@@ -466,15 +469,18 @@ corona.raw () {
 
             # printout data
             printf "%s$_separator%s$_separator%s$_separator%s$_separator%s\n" \
-            "$_country_name" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
+                   "$_country_name" "${current_data_list[3]}" "${current_data_list[4]}" \
+                   "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
+
             # printout summary
             for _i in {0..2} ; do
                 total_count_list[$_i]=$((total_count_list[$_i] + ${current_data_list[$((_i+3))]}))
             done
 
         done
-       printf "%s$_separator%s$_separator%s$_separator%s$_separator%s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}" "$(date -d $target_date +'%d.%m.%Y')"
-
+        printf "%s$_separator%s$_separator%s$_separator%s$_separator%s\n" \
+               "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}" \
+               "$(date -d $target_date +'%d.%m.%Y')"
     return 0
 }
 
