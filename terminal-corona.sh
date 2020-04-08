@@ -357,9 +357,9 @@ corona.history () {
         fi
 
     while [[ $_from -le $_to ]] ; do
-            _from=$(date -d "$_from + 1 day" +"%Y%m%d")
             target_date=$_from
             corona.country "$_country" | column -t -s$','
+            _from=$(date -d "$_from + 1 day" +"%Y%m%d")
         done
 }
 
@@ -384,9 +384,9 @@ corona.view () {
     while : ; do
             current_date=$(date '+%Y%m%d')
             corona.status
-            read -n1 -t $_sleep_time -p "" _cmd
+            read -n1 -t $_sleep_time -p "[q|p|b|n|t|h]: " _cmd
             case $_cmd in
-                    q)  break                                                           ;;
+                    q)  echo " - take care" ; break                                     ;;
                     t)  [[ $timestamp ]] && timestamp="" || timestamp=true              ;;
                     h)  [[ $header ]]  && unset header || header=true                   ;;
                   p|b)  target_date=$(date -d "$target_date - 1 days" +'%Y%m%d')
@@ -410,10 +410,12 @@ corona.md () {
     case "$1" in all|short) eval country_list=('$'"COUNTRY_LIST_${1^^}" ) ; shift ;; esac
     if [[ "$1" ]]; then country_list=("$@") ; fi
 
-    #printout header
-    echo                                                                   # make some space to make copy paste easy
+    # printout header
+    echo                                                   # make some space to make copy paste easy
     printf "%-18s | %10s | %10s | %10s | %s \n" "Country" "Confirmed" "Deaths" "Recovered" "Updated"
-    printf ": %s |: %s:|: %s:|: %s:|: %s\n" "$(echo -e ''$_{1..17}'\b-')" "$(echo -e ''$_{1..10}'\b-')" "$(echo -e ''$_{1..10}'\b-')" "$(echo -e ''$_{1..10}'\b-')" "$(echo -e ''$_{1..18}'\b-')"
+    printf ": %s |: %s:|: %s:|: %s:|: %s\n" \
+           "$(echo -e ''$_{1..17}'\b-')" "$(echo -e ''$_{1..10}'\b-')" "$(echo -e ''$_{1..10}'\b-')" \
+           "$(echo -e ''$_{1..10}'\b-')" "$(echo -e ''$_{1..18}'\b-')"
 
     # printout data lines
     for _country in ${country_list[@]} ; do
@@ -425,21 +427,18 @@ corona.md () {
 
             # printout data
             printf "%-18s | %10s | %10s | %10s | %s \n" \
-            "$_country_name" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "$(date -d ${current_data_list[2]} +%d.%m.%Y)"
+            "$_country_name" "${current_data_list[3]}" "${current_data_list[4]}" \
+            "${current_data_list[5]}" "$(date -d ${current_data_list[2]} +%d.%m.%Y)"
 
-            #if ! [[ ${current_data_list[5]} ]]; then current_data_list[5]="0"; fi
-            # printout summary
-            # [[ ${current_data_list[5]} ]] || current_data_list[5]="0"
-            # [[ ${current_data_list[4]} ]] || current_data_list[4]="0"
-            # [[ ${current_data_list[3]} ]] || current_data_list[3]="0"
-
+            # summary counter
             for _i in {0..2} ; do
-                #if ! [[ ${current_data_list[$_i]} ]]; then current_data_list[$_i]="0"; fi
                 total_count_list[$_i]=$((total_count_list[$_i] + ${current_data_list[$((_i+3))]}))
             done
     done
     # printout summary
-    printf "%-18s | %10s | %10s | %10s | %s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}" "$(date -d $target_date +'%d.%m.%Y')"
+    printf "%-18s | %10s | %10s | %10s | %s\n"  \
+    "Summary" "${total_count_list[0]}" "${total_count_list[1]}" \
+    "${total_count_list[2]}" "$(date -d $target_date +'%d.%m.%Y')"
     # printout table note
     printf "\n*corona status at %s*\n" "$(date)"
     echo
@@ -509,19 +508,3 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     corona.main "$@"
     exit 0
 fi
-
-
-
-# tc  ҉19
-# C ҉VID-19
-# c ҉o҉r ҈o ҉n ҈a ҉
-#   ҉ COVID-19
-#Status shows on header
-    # spreading
-    # printf "  ҉" | hexdump # 0000000 2020 89d2 0000004
-    # weakening
-    # printf "  ҈" | hexdump # 0000000 2020 88d2 0000004
-    # still there
-    # printf "_"
-    # gone
-    # printf " "
