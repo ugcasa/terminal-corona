@@ -388,7 +388,7 @@ corona.view () {
             current_date=$(date '+%Y%m%d')
             corona.status
             read -n1 -t $_sleep_time -p "[q|p|b|n|t|h]: " _cmd
-            cd /home/casa ; echo $_cmd ; echo $_cmd > file.txt
+            echo $_cmd ; echo $_cmd > $HOME/file.txt
             case $_cmd in
                     q)  printf " - take care!${NC}\n" ; break                           ;;
                     t)  [[ $timestamp ]] && timestamp="" || timestamp=true              ;;
