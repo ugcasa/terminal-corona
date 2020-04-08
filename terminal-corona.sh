@@ -6,6 +6,7 @@ COUNTRY_LIST="Finland Estonia Sweden Russia Norway Latvia Lithuania Denmark Icel
 COUNTRY_LIST_SHORT="Finland Estonia Sweden Russia Iceland Germany France Spain Italy Kingdom Iran Brazil Canada US India Thailand Vietnam China"
 COUNTRY_LIST_ALL="Australia Austria Canada China Denmark Finland France Germany Iceland Ireland Italy Netherlands Norway Russia Sweden Switzerland US Afghanistan Albania Algeria Andorra Angola Antigua Argentina Armenia Azerbaijan Bahamas Bahrain Bangladesh Barbados Belarus Belgium Belize Benin Bhutan Bolivia Bosnia Botswana Brazil Brunei Bulgaria Burkina Burma Burundi Cabo Cambodia Cameroon Central Chad Chile Colombia Congo Costa Cote Croatia Cuba Cyprus Czechia Diamond Djibouti Dominica Dominican Ecuador Egypt Equatorial Eritrea Estonia Eswatini Ethiopia Fiji Gabon Gambia Georgia Ghana Greece Grenada Guatemala Guinea Guinea-Bissau Guyana Haiti Honduras Hungary India Indonesia Iran Iraq Israel Jamaica Japan Jordan Kazakhstan Kenya Kosovo Kuwait Kyrgyzstan Laos Latvia Lebanon Liberia Libya Liechtenstein Lithuania Luxembourg Zaandam Madagascar Malaysia Maldives Mali Malta Mauritania Mauritius Mexico Moldova Monaco Mongolia Montenegro Morocco Mozambique Namibia Nepal Nicaragua Niger Nigeria Macedonia Oman Pakistan Panama Papua Paraguay Peru Philippines Poland Portugal Qatar Romania Rwanda Lucia Grenadines Marino Arabia Senegal Serbia Seychelles Sierra Singapore Slovakia Slovenia Somalia Spain Lanka Sudan Suriname Syria Taiwan Tanzania Thailand Timor-Leste Togo Trinidad Tunisia Turkey Uganda Ukraine Uruguay Uzbekistan US Kingdom Venezuela Vietnam Zambia Zimbabwe"
 
+
 declare -a country_list=("$COUNTRY_LIST")
 declare country_selected="${country_list[0]}"
 declare source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv"
@@ -34,7 +35,6 @@ corona.main () {
     local _cmd="$1" ; shift
     case $_cmd in
           history|status|view|md|help)
-declare -a total_count_list=(100 100 100 100 100)
                            corona.$_cmd "$@"                        ;;
                      raw)  corona.raw "$@"                          ;;
                      csv)  corona.raw ';' "$@"                      ;;
@@ -218,6 +218,7 @@ corona.country () {
     corona.get_data "$country_selected"
 
     local _change=""
+    declare -a _list_temp
     declare -a _last_list=($(cat $_last_time))
     declare -a _current_list=(${current_data_list[3]} ${current_data_list[4]} ${current_data_list[5]})
 
@@ -235,20 +236,10 @@ corona.country () {
     # printout timestamps column if active
     [[ $timestamp ]] && printf "%8s," "$_time"
 
-    # count total and replace zeros with "-", nicer to read.
+    # replace zeros with "-", nicer to read.
     for _i in {3..5}; do
-            _ii=$((_ii+1))
-            # echo "$_ii:$_i"
-            printf "%s + %s = " ${total_count_list[$_ii]} ${current_data_list[$_i]}
-            eval total_count_list[$_ii]=$((total_count_list[_ii] + current_data_list[_i]))
-            echo "'${total_count_list[$_ii]}'" #, ei toimi, laskee muttei data siirry globaaliin listamuuttujaan
             (( current_data_list[$_i] == 0 )) && current_data_list[$_i]="-"
         done
-    # echo "$total_death + ${current_data_list[4]}"
-
-    # echo "is $total_death"
-    # #total_recov="$((total_recov+current_data_list[5]))"
-
 
     # printout data
     printf "${NC}%18s,${CRY}%7s,${RED}%7s,${GRN}%7s,${NC}" \
@@ -282,24 +273,46 @@ corona.country () {
 
 
 corona.status () {
+    declare -a total_count_list=(0 0 0 0 0 0)
 
     if [[ $header ]]; then
             [[ $timestamp ]] && printf "${WHT}Updated        "
-            [[ $timestamp ]] && _header_date="$(printf '%15s' 'Country')" || _header_date=$(printf "%15s" "$(date -d $target_date +'%Y.%m.%d') Country")
+            [[ $timestamp ]] && _header_date="$(printf '%15s' 'Country')" || _header_date=$(printf "%15s" "$(date -d $target_date +'%d.%m.%Y') Country")
             printf "${WHT}%s,%7s,%7s,%7s,%7s ${NC} \n" "$_header_date" "Infect" "Death" "Recov" "Change" | column -t -s$','
         else
-            _header_date=$(printf "%s" "$(date -d $target_date +'%Y.%m.%d')")
+            _header_date=$(printf "%s" "$(date -d $target_date +'%d.%m.%Y')")
             printf "${WHT}  ҉ terminal-corona $_header_date %s${NC}\n" "- linux shell COVID-19 tracker - casa@ujo.guru 2020"
         fi
     if [[ "$1" ]]; then country_list=("$@") ; fi
 
     for _country in ${country_list[@]} ; do
             corona.country "$_country" | column -t -s$','
+            _last_time="$clone_location/$_country.last"
+            local _last_count_list=($(cat $_last_time))
+            for _i in {0..2} ; do
+                total_count_list[$_i]=$((total_count_list[$_i] + _last_count_list[$_i]))
+                done
         done
 
-    #echo "summary: $total_infected $total_death $total_recov"
-    #echo "summary: ${total_count_list[1]} ${total_count_list[2]} ${total_count_list[3]}"
-    echo "summary: ${total_count_list[@]}"
+    # printouot summary
+
+    #if [[ "${country_list[1]}" ]]; then                     # country list is longer than one
+        [[ $timestamp ]] && printf "${WHT}%s" "$(date -d $target_date +'%d.%m.%Y')  "
+        printf "${WHT}%18s %8s %8s %8s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}"
+
+        # get last sum
+        local _last_sum="$clone_location/$country/sum.last" ; [ -f "$_last_sum" ] || touch "$_last_sum"
+        declare -a _last_list=($(cat $_last_sum))
+
+        # # printout sum changes
+        # for _i in {0..2}; do
+        #         ((total_count_list[$_i] > _last_list[$_i])) && _sing="+" || _sing=""
+        #          _change=$((_current_list[$_i] - _last_list[$_i]))
+        #         printf "%s%s " "$_sing" "$_change"
+        #     done
+        #printf "%s %s %s" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}" > "$_last_sum"
+    #fi
+    #printf "\n${NC}"
 
 }
 
