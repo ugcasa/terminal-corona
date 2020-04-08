@@ -4,7 +4,7 @@
 
 COUNTRY_LIST="Finland Estonia Sweden Russia Norway Latvia Lithuania Denmark Iceland Netherlands Belarus Poland Belgium Germany France Spain Italy Portugal Kingdom Ireland Ukraine Greece Tunisia Turkey Egypt Iraq Iran Brazil Canada US Mexico Cuba Jamaica Bahamas Ecuador Chile India Thailand Vietnam Japan Nepal China"
 COUNTRY_LIST_SHORT="Finland Estonia Sweden Russia Iceland Germany France Spain Italy Kingdom Iran Brazil Canada US India Thailand Vietnam China"
-COUNTRY_LIST_ALL="Australia Austria Canada China Denmark Finland France Germany Iceland Ireland Italy Netherlands Norway Russia Sweden Switzerland US Afghanistan Albania Algeria Andorra Angola Antigua Argentina Armenia Azerbaijan Bahamas Bahrain Bangladesh Barbados Belarus Belgium Belize Benin Bhutan Bolivia Bosnia Botswana Brazil Brunei Bulgaria Burkina Burma Burundi Cabo Cambodia Cameroon Central Chad Chile Colombia Congo Costa Cote Croatia Cuba Cyprus Czechia Diamond Djibouti Dominica Dominican Ecuador Egypt Equatorial Eritrea Estonia Eswatini Ethiopia Fiji Gabon Gambia Georgia Ghana Greece Grenada Guatemala Guinea Guinea-Bissau Guyana Haiti Honduras Hungary India Indonesia Iran Iraq Israel Jamaica Japan Jordan Kazakhstan Kenya Kosovo Kuwait Kyrgyzstan Laos Latvia Lebanon Liberia Libya Liechtenstein Lithuania Luxembourg Zaandam Madagascar Malaysia Maldives Mali Malta Mauritania Mauritius Mexico Moldova Monaco Mongolia Montenegro Morocco Mozambique Namibia Nepal Nicaragua Niger Nigeria Macedonia Oman Pakistan Panama Papua Paraguay Peru Philippines Poland Portugal Qatar Romania Rwanda Lucia Grenadines Marino Arabia Senegal Serbia Seychelles Sierra Singapore Slovakia Slovenia Somalia Spain Lanka Sudan Suriname Syria Taiwan Tanzania Thailand Timor-Leste Togo Trinidad Tunisia Turkey Uganda Ukraine Uruguay Uzbekistan US Kingdom Venezuela Vietnam Zambia Zimbabwe"
+COUNTRY_LIST_ALL="Australia Austria Canada China Denmark Finland France Germany Iceland Ireland Italy Netherlands Norway Russia Sweden Switzerland US Afghanistan Albania Algeria Andorra Angola Antigua Argentina Armenia Azerbaijan Bahamas Bahrain Bangladesh Barbados Belarus Belgium Belize Benin Bhutan Bolivia Bosnia Botswana Brazil Brunei Bulgaria Burkina Burma Burundi Cabo Cambodia Cameroon Central Chad Chile Colombia Korea Kinshasa Brazzaville Costa Cote Croatia Cuba Cyprus Czechia Diamond Djibouti Dominica Dominican Ecuador Egypt Equatorial Eritrea Estonia Eswatini Ethiopia Fiji Gabon Gambia Georgia Ghana Greece Grenada Guatemala Guinea Guinea-Bissau Guyana Haiti Honduras Hungary India Indonesia Iran Iraq Israel Jamaica Japan Jordan Kazakhstan Kenya Kosovo Kuwait Kyrgyzstan Laos Latvia Lebanon Liberia Libya Liechtenstein Lithuania Luxembourg Zaandam Madagascar Malaysia Maldives Mali Malta Mauritania Mauritius Mexico Moldova Monaco Mongolia Montenegro Morocco Mozambique Namibia Nepal Nicaragua Niger Nigeria Macedonia Oman Pakistan Panama Papua Paraguay Peru Philippines Poland Portugal Qatar Romania Rwanda Lucia Grenadines Marino Arabia Senegal Serbia Seychelles Sierra Singapore Slovakia Slovenia Somalia Spain Lanka Sudan Suriname Syria Taiwan Tanzania Thailand Timor-Leste Togo Trinidad Tunisia Turkey Uganda Ukraine Uruguay Uzbekistan US Kingdom Venezuela Vietnam Zambia Zimbabwe"
 
 
 declare -a country_list=("$COUNTRY_LIST")
@@ -39,8 +39,9 @@ corona.main () {
                      raw)  corona.raw "$@"                          ;;
                      csv)  corona.raw ';' "$@"                      ;;
                      txt)  corona.raw ' ' "$@"                      ;;
-                  rebase)  rm "$clone_location/*" >/dev/null 2>&1   ;;
-                  remove)  rm -fr "$clone_location" >/dev/null 2>&1 ;;
+                  rebase)  rm -f "$clone_location/\*.history"
+                           rm -f "$clone_location/\*.last" ;; #>/dev/null 2>&1   ;;
+                  remove)  rm -fr "$clone_location" ;; #>/dev/null 2>&1 ;;
                      web)  firefox "$source_url"                    ;;
                    short)  country_list=($COUNTRY_LIST_SHORT)
                            unset timestamp
@@ -63,14 +64,14 @@ corona.help() {
     printf "${WHT}COVID-19 status viewer - help ----------------- casa@ujo.guru   ҉ ${NC}\n"
     printf "a Linux shell script to view current corona infection status worldwide\n"
 
-    printf "\n${WHT}usage:${NC}\t terminal-corona -t|h [output] all|Country List \n"
+    printf "\n${WHT}usage:${NC}\t terminal-corona -t|h [output] all|short|List Country\n"
 
     printf "\n${WHT}output:${NC}\n"
-    printf "  status [all|List Of Country]   current table view \n"
-    printf "  history [Country]              table of history with changes \n"
-    printf "  txt                            tight text output \n"
-    printf "  csv                            csv output \n"
-    printf "  md                             markdown table \n"
+    printf "  status [all|short or list]     current table view \n"
+    printf "  history [country]              table of history with changes \n"
+    printf "  txt [all|short or list]        tight text output \n"
+    printf "  csv [all|short or list]        csv output \n"
+    printf "  md [all|short or list]         markdown table \n"
     printf "  raw 'separator'                raw output with selectable separator \n"
     printf "  web                            open web view in source github page \n"
     printf "  view -i 'sec'                  status loop, updates hourly or input (s) \n"
@@ -85,9 +86,9 @@ corona.help() {
 
     printf "${WHT}flags:${NC}\n"
     printf "  -d                             date in format YYYYMMDD \n\n"
-    printf "All except view history can take argument 'all' to list all countries status \n"
-    printf "or list of country typed with capital first letter. If left blanc county \n"
-    printf "of interest is used. Flags are place oriented and cannot be combined. \n"
+    printf "All except history can take argument 'all' or 'short' \n"
+    printf "or list of countriesies typed with capital first letter. If country is left blank \n"
+    printf "default country list is used. Flags are place oriented and cannot be combined. \n"
 
     printf "\n${WHT}examples:${NC}\n"
     printf "  %s\n\t${WHT}%s${NC}\n" "# current status of these three countries"\
@@ -145,8 +146,16 @@ corona.get_history () {
     local _temp_file="$clone_location/history.temp"
     local _data="$(cat $history_source_file | grep $_location)"
 
-    _data="${_data//' '/'_'}"               # combine country names and timestamp to one word
-    _data=${_data//','/' '}                 # slit data
+    _data="${_data//',,'/',0,'}"
+    _data="${_data//'*'/''}"
+    _data="${_data//', '/'_'}"
+    _data=${_data//'"'/''}
+    _data="${_data//' ('/'_'}"
+    _data="${_data//')'/''}"
+    _data="${_data//' '/'_'}"
+    _data=${_data//','/' '}                 # split data
+    #_data=${_data//','/';'}
+
     echo "${_data[@]}" | cut -f 2-5 -d ' '> "$_temp_file"
 
     if [[ -f "$_output_file" ]] ; then rm "$_output_file" ; fi
@@ -191,12 +200,16 @@ corona.get_data () {
             current_data_list=($_data)
 
         else
-
             _data="$(cat $current_source_file | grep $_location | head -1)"
-
-            # _data="${_data//', '/'_'}"
+            _data="${_data//',,'/',0,'}"
+            _data="${_data//'*'/''}"
+            _data="${_data//', '/'_'}"
+            _data=${_data//'"'/''}
+            _data="${_data//' ('/'_'}"
+            _data="${_data//')'/''}"
             _data="${_data//' '/'_'}"
-            _data=${_data//,/ }
+            _data="${_data//','/' '}"
+
             local _data_list=($_data)
             _data_list[1]=$(date -d $(cut -f2 -d '_' <<< ${_data_list[1]}) '+%H:%M:%S')
             _data_list[2]=$(date -d $(cut -f1 -d '_' <<< ${_data_list[1]}) '+%Y%m%d')
@@ -221,6 +234,10 @@ corona.country () {
     corona.get_data "$country_selected"
     declare -a _current_list=(${current_data_list[3]} ${current_data_list[4]} ${current_data_list[5]})
 
+    # get nice country name
+    _country_name="$(cut -c -18 <<< ${current_data_list[0]})"
+    _country_name="${_country_name//'_'/' '}"                              # remove combiner
+
     # date stamp
     if ((target_date==current_date)); then                       # select date
             _time="${current_data_list[1]}  "                    # spaces to keep length same
@@ -228,9 +245,6 @@ corona.country () {
             _time=$(date -d ${current_data_list[2]} '+%d.%m.%Y') # date from data
         fi
 
-    # get country name
-    local _country="$(cut -c -18 <<< ${current_data_list[0]})"
-    _country="${_country//'_'/' '}"                              # remove combiner
 
     # printout timestamps column if active
     [[ $timestamp ]] && printf "%8s," "$_time"
@@ -242,7 +256,7 @@ corona.country () {
 
     # printout data
     printf "${NC}%18s,${CRY}%9s,${RED}%9s,${GRN}%9s,${NC}   " \
-           "$_country" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}"
+           "$_country_name" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}"
 
     # printout changes
     local _color_list=("${CRY}" "${RED}" "${GRN}")
@@ -264,7 +278,8 @@ corona.status () {
     # get and printout current status list with headers and summary
     declare -a total_count_list=()
 
-    # if user input list of countries, use it
+    # if user input list of countries use it
+    case "$1" in all|short) eval country_list=('$'"COUNTRY_LIST_${1^^}" ) ; shift ;; esac
     if [[ "$1" ]]; then country_list=("$@") ; fi
 
     # printout header
@@ -280,9 +295,9 @@ corona.status () {
     # get and printout country data and add to summary
     for _country in ${country_list[@]} ; do
             corona.country "$_country" | column -t -s$','
+
             # summary counter
-            _last_time="$clone_location/$_country.last"
-            local _last_count_list=($(cat $_last_time))
+            local _last_count_list=($(cat $clone_location/$_country.last))
             for _i in {0..2} ; do
                 total_count_list[$_i]=$((total_count_list[$_i] + _last_count_list[$_i]))
                 done
@@ -328,7 +343,10 @@ corona.view () {
                             fi
         esac
 
-    if [[ "$1" ]] ; then country_list=("$@") ; fi
+    # if user input list of countries use it
+    case "$1" in all|short) eval country_list=('$'"COUNTRY_LIST_${1^^}" ) ; shift ;; esac
+    if [[ "$1" ]]; then country_list=("$@") ; fi
+
 
     corona.update
     while : ; do
@@ -357,8 +375,8 @@ corona.md () {
     declare -a total_count_list=()
     unset timestamp
     corona.update
-    if [[ "$1" ]] ; then country_list=("$@") ; fi                          # if user input country list use it
-    if [[ "$1" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi  # if user input 'all'
+    case "$1" in all|short) eval country_list=('$'"COUNTRY_LIST_${1^^}" ) ; shift ;; esac
+    if [[ "$1" ]]; then country_list=("$@") ; fi
 
     #printout header
     echo                                                                   # make some space to make copy paste easy
@@ -370,22 +388,26 @@ corona.md () {
             corona.get_data "$_country"
 
             # cut country names
-            local _country_nice="$(cut -c -18 <<< ${current_data_list[0]})"
-            _country_nice="${_country_nice//'_'/' '}"
+            local _country_name="$(cut -c -18 <<< ${current_data_list[0]})"
+            _country_name="${_country_name//'_'/' '}"
 
             # printout data
             printf "%-18s | %10s | %10s | %10s | %s \n" \
-            "$_country_nice" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
+            "$_country_name" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "$(date -d ${current_data_list[2]} +%d.%m.%Y)"
 
+            #if ! [[ ${current_data_list[5]} ]]; then current_data_list[5]="0"; fi
             # printout summary
-            _last_time="$clone_location/$_country.last"
-            local _last_count_list=($(cat $_last_time))
+            # [[ ${current_data_list[5]} ]] || current_data_list[5]="0"
+            # [[ ${current_data_list[4]} ]] || current_data_list[4]="0"
+            # [[ ${current_data_list[3]} ]] || current_data_list[3]="0"
+
             for _i in {0..2} ; do
-                total_count_list[$_i]=$((total_count_list[$_i] + _last_count_list[$_i]))
+                #if ! [[ ${current_data_list[$_i]} ]]; then current_data_list[$_i]="0"; fi
+                total_count_list[$_i]=$((total_count_list[$_i] + ${current_data_list[$((_i+3))]}))
             done
     done
     # printout summary
-    printf "%18s | %10s | %10s | %10s | %s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}" "$(date -d $target_date +'%d.%m.%Y')"
+    printf "%-18s | %10s | %10s | %10s | %s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}" "$(date -d $target_date +'%d.%m.%Y')"
     # printout table note
     printf "\n*corona status at %s*\n" "$(date)"
     echo
@@ -400,25 +422,23 @@ corona.raw () {
     local _separator=" "
 
     if [[ "$1" ]] ; then _separator="$1" ; shift ; fi
-    if [[ "$1" ]] ; then country_list=("$@") ; fi
-    if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
+    case "$1" in all|short) eval country_list=('$'"COUNTRY_LIST_${1^^}" ) ; shift ;; esac
+    if [[ "$1" ]]; then country_list=("$@") ; fi
     if [[ $header ]] ; then printf "Country%sConfirmed%sDeaths%sRecovered%sUpdated\n" \
                                    "$_separator" "$_separator" "$_separator" "$_separator" ; fi
 
     for _country in ${country_list[@]}; do
             corona.get_data "$_country"
             # cut country names
-            local _country_nice="$(cut -c -18 <<< ${current_data_list[0]})"
-            _country_nice="${_country_nice//'_'/' '}"
+            local _country_name="$(cut -c -18 <<< ${current_data_list[0]})"
+            _country_name="${_country_name//'_'/' '}"
 
             # printout data
             printf "%s$_separator%s$_separator%s$_separator%s$_separator%s\n" \
-            "$_country_nice" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
+            "$_country_name" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
             # printout summary
-            _last_time="$clone_location/$_country.last"
-            local _last_count_list=($(cat $_last_time))
             for _i in {0..2} ; do
-                total_count_list[$_i]=$((total_count_list[$_i] + _last_count_list[$_i]))
+                total_count_list[$_i]=$((total_count_list[$_i] + ${current_data_list[$((_i+3))]}))
             done
 
         done
