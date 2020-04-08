@@ -12,7 +12,6 @@ declare source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/dat
 declare clone_location="/tmp/terminal-corona"
 declare current_source_file="$clone_location/COVID-19/data/cases_country.csv"
 declare history_source_file="$clone_location/COVID-19/data/cases_time.csv"
-declare -a total_count_list=(100 100 100 100 100)
 declare total_death=0
 
 # quick decorations from deco.sh for standalone
@@ -35,6 +34,7 @@ corona.main () {
     local _cmd="$1" ; shift
     case $_cmd in
           history|status|view|md|help)
+declare -a total_count_list=(100 100 100 100 100)
                            corona.$_cmd "$@"                        ;;
                      raw)  corona.raw "$@"                          ;;
                      csv)  corona.raw ';' "$@"                      ;;
