@@ -47,8 +47,8 @@ corona.main () {
                            unset timestamp
                            corona.update
                            corona.status "$@"                       ;;
-                   phone)  unset timestamp
-                           country_list=($COUNTRY_LIST_SHORT)
+                   phone)  unset timestamp header
+                           #country_list=($COUNTRY_LIST_SHORT)
                            corona.view                              ;;
                      all)  country_list=($COUNTRY_LIST_ALL)
                            corona.update
@@ -322,8 +322,8 @@ corona.status () {
                    "$_header_date" "Infect" "Death" "Recov" "Change" | column -t -s$','
         else
             _header_date=$(printf "%s" "$(date -d $target_date +'%d.%m.%Y')")
-            printf "${WHT}  ҉ terminal-corona $_header_date %s${NC}\n" \
-                   "- linux shell COVID-19 tracker - casa@ujo.guru 2020"
+            printf "${WHT}terminal-corona - $_header_date %s${NC}\n" \
+                   "   ҉  COVID-19 tracker - casa@ujo.guru"
         fi
 
     # get and printout country data and add to summary
@@ -388,6 +388,7 @@ corona.view () {
             current_date=$(date '+%Y%m%d')
             corona.status
             read -n1 -t $_sleep_time -p "[q|p|b|n|t|h]: " _cmd
+            cd /home/casa ; echo $_cmd ; echo $_cmd > file.txt
             case $_cmd in
                     q)  printf " - take care!${NC}\n" ; break                           ;;
                     t)  [[ $timestamp ]] && timestamp="" || timestamp=true              ;;
@@ -398,6 +399,7 @@ corona.view () {
                         ((target_date>current_date)) && target_date=${current_date}     ;;
                    "")  corona.update
                         target_date=$(date +'%Y%m%d')                                   ;;
+                    #*)  cd ; echo "$_cmd" ; echo "$_cmd" >> file.txt
                 esac
             clear
 
