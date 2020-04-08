@@ -210,16 +210,15 @@ corona.get_data () {
 ## Printouts
 
 corona.country () {
-    [ "$1" ] && country_selected="$1"
-
-    _last_time="$clone_location" ; [ -d "$_last_time" ] || mkdir "$_last_time"
-    _last_time="$_last_time/$country_selected.last" ; [ -f "$_last_time" ] || touch "$_last_time"
-
-    corona.get_data "$country_selected"
-
-    local _change=""
+    [ "$1" ] && country_selected="$1"                            # overwrites global if user input
+    local _change=
+    local _last_time="$clone_location" ; [ -d "$_last_time" ] || mkdir "$_last_time"
+    local _last_time="$_last_time/$country_selected.last" ; [ -f "$_last_time" ] || touch "$_last_time"
     declare -a _list_temp
     declare -a _last_list=($(cat $_last_time))
+
+    # parse data from local temp file, fill up global 'current_data_list'
+    corona.get_data "$country_selected"
     declare -a _current_list=(${current_data_list[3]} ${current_data_list[4]} ${current_data_list[5]})
 
     # date stamp
@@ -242,51 +241,46 @@ corona.country () {
         done
 
     # printout data
-    printf "${NC}%18s,${CRY}%7s,${RED}%7s,${GRN}%7s,${NC}" \
+    printf "${NC}%18s,${CRY}%9s,${RED}%9s,${GRN}%9s,${NC}   " \
            "$_country" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}"
 
     # printout changes
-    if ! ((_current_list[0]==_last_list[0])) ; then
-            _change=$((_current_list[0]-_last_list[0]))
-
-            ((_current_list[0]>_last_list[0])) && _sing="+" || _sing=""
-            printf "${CRY} %s%s ${NC}" "$_sing" "$_change"
+    local _color_list=("${CRY}" "${RED}" "${GRN}")
+    for _i in {0..2} ; do
+        if ! ((_current_list[_i]==_last_list[_i])) ; then
+                _change=$((_current_list[_i]-_last_list[_i]))
+                ((_current_list[_i]>_last_list[_i])) && _sing="+" || _sing=""
+                printf "${_color_list[$_i]}%s%s${NC} " "$_sing" "$_change"
         fi
-
-    if ! ((_current_list[1]==_last_list[1])) ; then
-            _change=$((_current_list[1]-_last_list[1]))
-
-            ((_current_list[1]>_last_list[1])) && _sing="+" || _sing=""
-            printf "${RED} %s%s ${NC}" "$_sing" "$_change"
-        fi
-
-    if ! ((_current_list[2]==_last_list[2])) ; then
-            _change=$((_current_list[2]-_last_list[2]))
-
-            ((_current_list[2]>_last_list[2])) && _sing="+" || _sing=""
-            printf "${GRN} %s%s ${NC}" "$_sing" "$_change"
-        fi
-
+    done
     printf "\n"
+
+    # save last list to file
     printf "%s %s %s" "${_current_list[0]}" "${_current_list[1]}" "${_current_list[2]}" > "$_last_time"
 }
 
 
 corona.status () {
-    declare -a total_count_list=(0 0 0 0 0 0)
+    # get and printout current status list with headers and summary
+    declare -a total_count_list=()
 
+    # if user input list of countries, use it
+    if [[ "$1" ]]; then country_list=("$@") ; fi
+
+    # printout header
     if [[ $header ]]; then
             [[ $timestamp ]] && printf "${WHT}Updated        "
             [[ $timestamp ]] && _header_date="$(printf '%15s' 'Country')" || _header_date=$(printf "%15s" "$(date -d $target_date +'%d.%m.%Y') Country")
-            printf "${WHT}%s,%7s,%7s,%7s,%7s ${NC} \n" "$_header_date" "Infect" "Death" "Recov" "Change" | column -t -s$','
+            printf "${WHT}%s,%9s,%9s,%9s,%9s ${NC} \n" "$_header_date" "Infect" "Death" "Recov" "Change" | column -t -s$','
         else
             _header_date=$(printf "%s" "$(date -d $target_date +'%d.%m.%Y')")
             printf "${WHT}  ҉ terminal-corona $_header_date %s${NC}\n" "- linux shell COVID-19 tracker - casa@ujo.guru 2020"
         fi
-    if [[ "$1" ]]; then country_list=("$@") ; fi
 
+    # get and printout country data and add to summary
     for _country in ${country_list[@]} ; do
             corona.country "$_country" | column -t -s$','
+            # summary counter
             _last_time="$clone_location/$_country.last"
             local _last_count_list=($(cat $_last_time))
             for _i in {0..2} ; do
@@ -294,17 +288,14 @@ corona.status () {
                 done
         done
 
-    # printouot summary
-
-        [[ $timestamp ]] && printf "${WHT}%s" "$(date -d $target_date +'%d.%m.%Y')  "
-        printf "${WHT}%18s %8s %8s %8s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}"
-
+    # printout summary
+    [[ $timestamp ]] && printf "${WHT}%s" "$(date -d $target_date +'%d.%m.%Y')  "
+    printf "${WHT}%18s %10s %10s %10s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}"
 }
 
 
 corona.history () {
-    #corona.update
-
+    # history browser
     local _country="Finland" ; [[ "$1" ]] &&_country="$1" ; shift
     local _from=$(date -d 20200122 +'%Y%m%d') ; [[ "$1" ]] &&_from=$(date -d $1 +'%Y%m%d') ; shift
     local _to=$(date -d "$current_date -1 days" +'%Y%m%d') ; [[ "$1" ]] &&_to=$(date -d $1 +'%Y%m%d') ; shift
@@ -315,7 +306,7 @@ corona.history () {
     if [[ $header ]]; then
             [[ $timestamp ]] && printf "${WHT}Updated        "
             [[ $timestamp ]] || printf ""
-            printf "${WHT}%15s,%7s,%7s,%7s,%7s ${NC} \n" " Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
+            printf "${WHT}%15s,%9s,%9s,%9s,%9s ${NC} \n" " Country" "Infect" "Death" "Recov" "Change" | column -t -s$','
         fi
 
     while [[ $_from -le $_to ]] ; do
@@ -327,7 +318,7 @@ corona.history () {
 
 
 corona.view () {
-
+    # looping view for info display use
     local _sleep_time=3600
 
     case "$1" in -i)    shift
@@ -363,28 +354,46 @@ corona.view () {
 
 corona.md () {
 
+    declare -a total_count_list=()
     unset timestamp
     corona.update
-    if [[ "$1" ]] ; then country_list=("$@") ; fi
-    if [[ "${1,,}" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi
+    if [[ "$1" ]] ; then country_list=("$@") ; fi                          # if user input country list use it
+    if [[ "$1" == "all" ]] ; then country_list=("$COUNTRY_LIST_ALL") ; fi  # if user input 'all'
 
-    echo
-    printf "Country | Confirmed | Deaths | Recovered | Updated \n"
-    printf " --- | --- | --- | --- | ---\n"
+    #printout header
+    echo                                                                   # make some space to make copy paste easy
+    printf "%-18s | %10s | %10s | %10s | %s \n" "Country" "Confirmed" "Deaths" "Recovered" "Updated"
+    printf ": %s |: %s:|: %s:|: %s:|: %s\n" "$(echo -e ''$_{1..17}'\b-')" "$(echo -e ''$_{1..10}'\b-')" "$(echo -e ''$_{1..10}'\b-')" "$(echo -e ''$_{1..10}'\b-')" "$(echo -e ''$_{1..18}'\b-')"
 
+    # printout data lines
     for _country in ${country_list[@]} ; do
             corona.get_data "$_country"
-            printf "%s | %s | %s | %s |  %s \n" \
-            "${current_data_list[0]}" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
-        done
 
+            # cut country names
+            local _country_nice="$(cut -c -18 <<< ${current_data_list[0]})"
+            _country_nice="${_country_nice//'_'/' '}"
+
+            # printout data
+            printf "%-18s | %10s | %10s | %10s | %s \n" \
+            "$_country_nice" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
+
+            # printout summary
+            _last_time="$clone_location/$_country.last"
+            local _last_count_list=($(cat $_last_time))
+            for _i in {0..2} ; do
+                total_count_list[$_i]=$((total_count_list[$_i] + _last_count_list[$_i]))
+            done
+    done
+    # printout summary
+    printf "%18s | %10s | %10s | %10s | %s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}" "$(date -d $target_date +'%d.%m.%Y')"
+    # printout table note
     printf "\n*corona status at %s*\n" "$(date)"
     echo
 }
 
 
 corona.raw () {
-
+    declare -a total_count_list=()
     unset timestamp
     corona.update
     local _output=""
@@ -398,9 +407,23 @@ corona.raw () {
 
     for _country in ${country_list[@]}; do
             corona.get_data "$_country"
+            # cut country names
+            local _country_nice="$(cut -c -18 <<< ${current_data_list[0]})"
+            _country_nice="${_country_nice//'_'/' '}"
+
+            # printout data
             printf "%s$_separator%s$_separator%s$_separator%s$_separator%s\n" \
-            "${current_data_list[0]}" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
+            "$_country_nice" "${current_data_list[3]}" "${current_data_list[4]}" "${current_data_list[5]}" "${current_data_list[2]}_${current_data_list[1]}"
+            # printout summary
+            _last_time="$clone_location/$_country.last"
+            local _last_count_list=($(cat $_last_time))
+            for _i in {0..2} ; do
+                total_count_list[$_i]=$((total_count_list[$_i] + _last_count_list[$_i]))
+            done
+
         done
+       printf "%s$_separator%s$_separator%s$_separator%s$_separator%s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}" "$(date -d $target_date +'%d.%m.%Y')"
+
     return 0
 }
 
