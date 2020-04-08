@@ -296,23 +296,8 @@ corona.status () {
 
     # printouot summary
 
-    #if [[ "${country_list[1]}" ]]; then                     # country list is longer than one
         [[ $timestamp ]] && printf "${WHT}%s" "$(date -d $target_date +'%d.%m.%Y')  "
         printf "${WHT}%18s %8s %8s %8s\n" "Summary" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}"
-
-        # get last sum
-        local _last_sum="$clone_location/$country/sum.last" ; [ -f "$_last_sum" ] || touch "$_last_sum"
-        declare -a _last_list=($(cat $_last_sum))
-
-        # # printout sum changes
-        # for _i in {0..2}; do
-        #         ((total_count_list[$_i] > _last_list[$_i])) && _sing="+" || _sing=""
-        #          _change=$((_current_list[$_i] - _last_list[$_i]))
-        #         printf "%s%s " "$_sing" "$_change"
-        #     done
-        #printf "%s %s %s" "${total_count_list[0]}" "${total_count_list[1]}" "${total_count_list[2]}" > "$_last_sum"
-    #fi
-    #printf "\n${NC}"
 
 }
 
