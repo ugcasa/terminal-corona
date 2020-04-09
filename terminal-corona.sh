@@ -10,7 +10,7 @@ UPDATE_METHOD="web"
 declare -a country_list=("$COUNTRY_LIST")
 declare country_selected="${country_list[0]}"
 declare source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv"
-declare clone_location="/tmp/terminal-corona"
+declare clone_location="/tmp/$USER/terminal-corona"
 declare current_source_file="$clone_location/COVID-19/data/cases_country.csv"
 declare history_source_file="$clone_location/COVID-19/data/cases_time.csv"
 declare total_death=0
@@ -48,7 +48,6 @@ corona.main () {
                            corona.update
                            corona.status "$@"                       ;;
                    phone)  unset timestamp header
-                           #country_list=($COUNTRY_LIST_SHORT)
                            corona.view                              ;;
                      all)  country_list=($COUNTRY_LIST_ALL)
                            corona.update
@@ -381,22 +380,29 @@ corona.view () {
     # if user input list of countries use it
     case "$1" in all|short) eval country_list=('$'"COUNTRY_LIST_${1^^}" ) ; shift ;; esac
     if [[ "$1" ]]; then country_list=("$@") ; fi
-
+    _escape_char=$(printf "\u1b")
 
     corona.update
     while : ; do
             current_date=$(date '+%Y%m%d')
             corona.status
-            read -n1 -t $_sleep_time -p "[q|p|b|n|t|h]: " _cmd
-            echo $_cmd ; echo $_cmd > $HOME/file.txt
+            read  -r -sn1 -t $_sleep_time -p "[q|p|b|n|t|h]: " _cmd
+
+            if [[ $_cmd == $_escape_char ]]; then
+                read -rsn2 -t 0.01 _cmd # read 2 more chars
+            fi
+            #echo $_cmd  | hexdump ; echo $_cmd >> $HOME/file.txt
+
             case $_cmd in
                     q)  printf " - take care!${NC}\n" ; break                           ;;
                     t)  [[ $timestamp ]] && timestamp="" || timestamp=true              ;;
                     h)  [[ $header ]]  && unset header || header=true                   ;;
-                  p|b)  target_date=$(date -d "$target_date - 1 days" +'%Y%m%d')
+             p|b|'[D')  target_date=$(date -d "$target_date - 1 days" +'%Y%m%d')
                         ((target_date<20200122)) && target_date=20200122                ;;
-                    n)  target_date=$(date -d "$target_date + 1 days" +'%Y%m%d')
+               n|'[C')  target_date=$(date -d "$target_date + 1 days" +'%Y%m%d')
                         ((target_date>current_date)) && target_date=${current_date}     ;;
+         '0a10'|'[10')  echo sweep ;;
+         '0a0e'|'[0e')  echo swoop ;;
                    "")  corona.update
                         target_date=$(date +'%Y%m%d')                                   ;;
                     #*)  cd ; echo "$_cmd" ; echo "$_cmd" >> file.txt
@@ -405,6 +411,13 @@ corona.view () {
 
         done
 }
+
+
+# swipe history direction:  0a0e
+# swipe forward direction:  0a10
+# key history direction: 0a1b 0a5b 0a44
+# key forward direction: 0a1b 0a5b 0a43
+
 
 
 corona.md () {
