@@ -4,13 +4,13 @@
 
 COUNTRY_LIST="Finland Estonia Sweden Russia Norway Latvia Lithuania Denmark Iceland Netherlands Belarus Poland Belgium Germany France Spain Italy Portugal Kingdom Ireland Ukraine Greece Tunisia Turkey Egypt Iraq Iran Brazil Canada Mexico Cuba Jamaica Bahamas Ecuador Chile India Thailand Vietnam Japan Nepal China"
 COUNTRY_LIST_SHORT="Finland Estonia Sweden Russia Iceland Germany France Spain Italy Kingdom Iran Brazil Canada US India Thailand Vietnam China"
-COUNTRY_LIST_ALL="Australia Austria Canada China Denmark Finland France Germany Iceland Ireland Italy Netherlands Norway Russia Sweden Switzerland Afghanistan Albania Algeria Andorra Angola Antigua Argentina Armenia Azerbaijan Bahamas Bahrain Bangladesh Barbados Belarus Belgium Belize Benin Bhutan Bolivia Bosnia Botswana Brazil Brunei Bulgaria Burkina Burma Burundi Cabo Cambodia Cameroon Central Chad Chile Colombia Korea Kinshasa Brazzaville Costa Cote Croatia Cuba Cyprus Czechia Diamond Djibouti Dominica Dominican Ecuador Egypt Equatorial Eritrea Estonia Eswatini Ethiopia Fiji Gabon Gambia Georgia Ghana Greece Grenada Guatemala Guinea Guinea-Bissau Guyana Haiti Honduras Hungary India Indonesia Iran Iraq Israel Jamaica Japan Jordan Kazakhstan Kenya Kosovo Kuwait Kyrgyzstan Laos Latvia Lebanon Liberia Libya Liechtenstein Lithuania Luxembourg Zaandam Madagascar Malaysia Maldives Mali Malta Mauritania Mauritius Mexico Moldova Monaco Mongolia Montenegro Morocco Mozambique Namibia Nepal Nicaragua Niger Nigeria Macedonia Oman Pakistan Panama Papua Paraguay Peru Philippines Poland Portugal Qatar Romania Rwanda Lucia Grenadines Marino Arabia Senegal Serbia Seychelles Sierra Singapore Slovakia Slovenia Somalia Spain Lanka Sudan Suriname Syria Taiwan Tanzania Thailand Timor-Leste Togo Trinidad Tunisia Turkey Uganda Ukraine Uruguay Uzbekistan US Kingdom Venezuela Vietnam Zambia Zimbabwe"
+COUNTRY_LIST_ALL="Afghanistan Albania Algeria Andorra Angola Antigua Arabia Argentina Armenia Australia Austria Azerbaijan Bahamas Bahrain Bangladesh Barbados Belarus Belgium Belize Benin Bhutan Bolivia Bosnia Botswana Brazil Brazzaville Brunei Bulgaria Burkina Burma Burundi Cabo Cambodia Cameroon Canada Central Chad Chile China Colombia Costa Cote Croatia Cuba Cyprus Czechia Denmark Diamond Djibouti Dominica Dominican Ecuador Egypt Equatorial Eritrea Estonia Eswatini Ethiopia Fiji Finland France Gabon Gambia Georgia Germany Ghana Greece Grenada Grenadines Guatemala Guinea Guinea-Bissau Guyana Haiti Honduras Hungary Iceland India Indonesia Iran Iraq Ireland Israel Italy Jamaica Japan Jordan Kazakhstan Kenya Kingdom Kinshasa Korea Kosovo Kuwait Kyrgyzstan Lanka Laos Latvia Lebanon Liberia Libya Liechtenstein Lithuania Lucia Luxembourg Macedonia Madagascar Malaysia Maldives Mali Malta Marino Mauritania Mauritius Mexico Moldova Monaco Mongolia Montenegro Morocco Mozambique Namibia Nepal Netherlands Nicaragua Niger Nigeria Norway Oman Pakistan Panama Papua Paraguay Peru Philippines Poland Portugal Qatar Romania Russia Rwanda Senegal Serbia Seychelles Sierra Singapore Slovakia Slovenia Somalia Spain Sudan Suriname Sweden Switzerland Syria Taiwan Tanzania Thailand Timor-Leste Togo Trinidad Tunisia Turkey Uganda Ukraine Uruguay Uzbekistan Venezuela Vietnam Zaandam Zambia Zimbabwe"
 UPDATE_METHOD="web"
 
 declare -a country_list=("$COUNTRY_LIST")
 declare country_selected="${country_list[0]}"
 declare source_url="https://github.com/CSSEGISandData/COVID-19/blob/web-data/data/cases_country.csv"
-declare clone_location="/tmp/terminal-corona"
+declare clone_location="/tmp/$USER/terminal-corona"
 declare current_source_file="$clone_location/COVID-19/data/cases_country.csv"
 declare history_source_file="$clone_location/COVID-19/data/cases_time.csv"
 declare total_death=0
@@ -47,8 +47,7 @@ corona.main () {
                            unset timestamp
                            corona.update
                            corona.status "$@"                       ;;
-                   phone)  unset timestamp
-                           country_list=($COUNTRY_LIST_SHORT)
+                   phone)  unset timestamp header
                            corona.view                              ;;
                      all)  country_list=($COUNTRY_LIST_ALL)
                            corona.update
@@ -322,8 +321,8 @@ corona.status () {
                    "$_header_date" "Infect" "Death" "Recov" "Change" | column -t -s$','
         else
             _header_date=$(printf "%s" "$(date -d $target_date +'%d.%m.%Y')")
-            printf "${WHT}  ҉ terminal-corona $_header_date %s${NC}\n" \
-                   "- linux shell COVID-19 tracker - casa@ujo.guru 2020"
+            printf "${WHT}terminal-corona - $_header_date %s${NC}\n" \
+                   "   ҉  COVID-19 tracker - casa@ujo.guru"
         fi
 
     # get and printout country data and add to summary
@@ -381,28 +380,49 @@ corona.view () {
     # if user input list of countries use it
     case "$1" in all|short) eval country_list=('$'"COUNTRY_LIST_${1^^}" ) ; shift ;; esac
     if [[ "$1" ]]; then country_list=("$@") ; fi
-
+    _escape_char=$(printf "\u1b")
 
     corona.update
     while : ; do
             current_date=$(date '+%Y%m%d')
             corona.status
-            read -n1 -t $_sleep_time -p "[q|p|b|n|t|h]: " _cmd
+            read  -r -sn1 -t $_sleep_time -p "[q|p|b|n|j|m|t|h]: " _cmd
+
+            if [[ $_cmd == $_escape_char ]]; then
+                read -rsn2 -t 0.01 _cmd # read 2 more chars
+            fi
+            #echo $_cmd  | hexdump ; echo $_cmd >> $HOME/file.txt
+
             case $_cmd in
                     q)  printf " - take care!${NC}\n" ; break                           ;;
                     t)  [[ $timestamp ]] && timestamp="" || timestamp=true              ;;
                     h)  [[ $header ]]  && unset header || header=true                   ;;
-                  p|b)  target_date=$(date -d "$target_date - 1 days" +'%Y%m%d')
-                        ((target_date<20200122)) && target_date=20200122                ;;
-                    n)  target_date=$(date -d "$target_date + 1 days" +'%Y%m%d')
+
+               j|'[A')  target_date=$(date -d "$target_date + 1 week" +'%Y%m%d')
                         ((target_date>current_date)) && target_date=${current_date}     ;;
+               m|'[B')  target_date=$(date -d "$target_date - 1 week" +'%Y%m%d')
+                        ((target_date<20200122)) && target_date=20200122                ;;
+             p|b|'[D')  target_date=$(date -d "$target_date - 1 days" +'%Y%m%d')
+                        ((target_date<20200122)) && target_date=20200122                ;;
+               n|'[C')  target_date=$(date -d "$target_date + 1 days" +'%Y%m%d')
+                        ((target_date>current_date)) && target_date=${current_date}     ;;
+         '0a10'|'[10')  echo sweep ;;
+         '0a0e'|'[0e')  echo swoop ;;
                    "")  corona.update
                         target_date=$(date +'%Y%m%d')                                   ;;
+                    #*)  cd ; echo "$_cmd" ; echo "$_cmd" >> file.txt
                 esac
             clear
 
         done
 }
+
+
+# swipe history direction:  0a0e
+# swipe forward direction:  0a10
+# key history direction: 0a1b 0a5b 0a44
+# key forward direction: 0a1b 0a5b 0a43
+
 
 
 corona.md () {
