@@ -240,6 +240,8 @@ corona.get_data () {
             _data="${_data//')'/''}"
             _data="${_data//' '/'_'}"
             _data="${_data//','/' '}"
+            _data="${_data//"'"/'_'}"
+
 
             local _data_list=($_data)
             _data_list[1]=$(date -d $(cut -f2 -d '_' <<< ${_data_list[1]}) '+%H:%M:%S')
@@ -467,6 +469,9 @@ corona.md () {
 
             # summary counter
             for _i in {0..2} ; do
+                #total_count_list[$_i]=$(echo ${total_count_list[$_i]} | cut -f 1 -d ".")
+                #total_count_list[$_i]=$(echo ${total_count_list[$_i]} | cut -f 1 -d ".")
+                current_data_list[$((_i+3))]=$(echo ${current_data_list[$((_i+3))]} | cut -f 1 -d ".")
                 total_count_list[$_i]=$((total_count_list[$_i] + ${current_data_list[$((_i+3))]}))
             done
     done
@@ -506,6 +511,8 @@ corona.raw () {
 
             # printout summary
             for _i in {0..2} ; do
+                #total_count_list[$_i]=$(echo ${total_count_list[$_i]} | cut -f 1 -d ".")
+                current_data_list[$((_i+3))]=$(echo ${current_data_list[$((_i+3))]} | cut -f 1 -d ".")
                 total_count_list[$_i]=$((total_count_list[$_i] + ${current_data_list[$((_i+3))]}))
             done
 
