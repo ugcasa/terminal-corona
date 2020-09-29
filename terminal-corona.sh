@@ -15,7 +15,7 @@ declare current_source_file="$clone_location/COVID-19/data/cases_country.csv"
 declare history_source_file="$clone_location/COVID-19/data/cases_time.csv"
 declare total_death=0
 
-# quick decorations from deco.sh for standalone
+# quick decorations
 RED='\033[0;31m'
 GRN='\033[0;32m'
 WHT='\033[1;37m'
@@ -29,8 +29,7 @@ UPDATED () { [ "$1" ] && printf "$1: $UPDATED" || printf "$UPDATED" ; }
 DONE () { [ "$1" ] && printf "$1: $DONE" || printf "$DONE" ; }
 
 
-# User interface
-
+# command parser
 corona.main () {
     local _cmd="$1" ; shift
     case $_cmd in
@@ -89,7 +88,6 @@ corona.help() {
     printf "or list of countriesies typed with capital first letter. If country is \n"
     printf "left blank default country list is used. Flags are place oriented and \n"
     printf "cannot be combined. \n"
-
     printf "\n${WHT}examples:${NC}\n"
     printf "  %-40s\n\t${WHT}%s${NC}\n" \
            "current status of countries"             "./terminal-corona.sh Estonia Sweden Russia"
@@ -172,6 +170,7 @@ corona.update () {
 
 corona.get_history () {
     #printf "analyzing history data.. "
+
     local _stamp=""
     local _location="$1"
     local _output_file="$clone_location/$_location.history"
@@ -204,6 +203,7 @@ corona.get_history () {
 
 corona.get_data () {
     # get data from local base
+
     local _data=""
     local _location="$1"
 
@@ -245,6 +245,11 @@ corona.get_data () {
             _data_list[1]=$(date -d $(cut -f2 -d '_' <<< ${_data_list[1]}) '+%H:%M:%S')
             _data_list[2]=$(date -d $(cut -f1 -d '_' <<< ${_data_list[1]}) '+%Y%m%d')
 
+            for i in $_data_list ; do
+                _data_list[$i]=$(echo ${_data_list[$i]} | cut -f 1 -d ".")
+                #echo "$_data_list[$i]"
+            done
+
             current_data_list=(${_data_list[0]} ${_data_list[1]} ${_data_list[2]} \
                                ${_data_list[4]} ${_data_list[5]} ${_data_list[6]})
         fi
@@ -254,7 +259,9 @@ corona.get_data () {
 ## Printouts
 
 corona.country () {
-    [ "$1" ] && country_selected="$1"                            # overwrites global if user input
+    # printout coutry data
+
+    [ "$1" ] && country_selected="$1"
     local _change=
     local _last_time="$clone_location" ; [ -d "$_last_time" ] || mkdir "$_last_time"
     local _last_time="$_last_time/$country_selected.last" ; [ -f "$_last_time" ] || touch "$_last_time"
@@ -267,13 +274,16 @@ corona.country () {
 
     # get nice country name
     _country_name="$(cut -c -18 <<< ${current_data_list[0]})"
-    _country_name="${_country_name//'_'/' '}"                    # remove combiner
+    # remove combiner
+    _country_name="${_country_name//'_'/' '}"
 
-    # date stamp
-    if ((target_date==current_date)); then                       # select date
-            _time="${current_data_list[1]}  "                    # spaces to keep length same
+    # date stamp, select date
+    if ((target_date==current_date)); then
+            # spaces to keep length same
+            _time="${current_data_list[1]}  "
         else
-            _time=$(date -d ${current_data_list[2]} '+%d.%m.%Y') # date from data
+            # date from data
+            _time=$(date -d ${current_data_list[2]} '+%d.%m.%Y')
         fi
 
 
@@ -282,6 +292,8 @@ corona.country () {
 
     # replace zeros with "-", nicer to read.
     for _i in {3..5}; do
+            # make integer
+            current_data_list[$_i]=$(echo ${current_data_list[$_i]} |cut -f1 -d ".")
             (( current_data_list[$_i] == 0 )) && current_data_list[$_i]="-"
         done
 
@@ -292,14 +304,14 @@ corona.country () {
     # printout changes
     local _color_list=("${CRY}" "${RED}" "${GRN}")
     for _i in {0..2} ; do
+        _current_list[$_i]=$(echo ${_current_list[$_i]} |cut -f1 -d ".")
         if ! ((_current_list[_i]==_last_list[_i])) ; then
                 _change=$((_current_list[_i]-_last_list[_i]))
                 ((_current_list[_i]>_last_list[_i])) && _sing="+" || _sing=""
                 printf "${_color_list[$_i]}%s%s${NC} " "$_sing" "$_change"
         fi
     done
-    printf "\n"
-
+    echo
     # save last list to file
     printf "%s %s %s" "${_current_list[0]}" "${_current_list[1]}" "${_current_list[2]}" > "$_last_time"
 }
